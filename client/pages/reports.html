@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reported Users – SyncItUp Admin</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="nav-logo" href="/">Sync<span class="logo-dot">It</span>Up</a>
+  <div class="nav-toggle"><span></span><span></span><span></span></div>
+  <div class="nav-links">
+    <a href="/pages/admin.html">Dashboard</a>
+    <a href="/pages/reports.html" class="active">Reports</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-avatar" id="navAvatar" style="cursor:default">A</div>
+    <span style="font-size:0.8rem;font-weight:600;color:var(--primary);background:var(--primary-pale);padding:4px 10px;border-radius:100px">Admin</span>
+    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<main style="padding:2rem 0 3rem">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">🚨 Reported Users</h1>
+      <p class="page-subtitle">Review and take action on user reports from your college.</p>
+    </div>
+
+    <div id="reportsList">
+      <div class="loading-overlay"><div class="spinner"></div> Loading reports...</div>
+    </div>
+  </div>
+</main>
+
+<!-- Report Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <span class="modal-title">📄 Report Details</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- filled dynamically -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn btn-danger" id="modalBlockBtn">🔒 Block Reported User</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/js/app.js"></script>
+<script>
+let reports = [];
+let selectedReportUserId = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await requireAuth('admin');
+  if (!user) return;
+  document.getElementById('navAvatar').textContent = getInitials(user.name);
+  await loadReports();
+});
+
+async function loadReports() {
+  const res = await apiRequest('/api/admin/reports');
+  const container = document.getElementById('reportsList');
+
+  if (!res.success) {
+    container.innerHTML = `<div class="alert alert-error">Failed to load reports. ${res.message}</div>`;
+    return;
+  }
+
+  reports = res.reports;
+
+  if (!reports.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">No reports yet</div><div class="empty-state-text">Your college community is clean!</div></div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="card" style="padding:0">
+      <div class="card-header" style="padding:1.25rem 1.5rem">
+        <span class="card-title">All Reports (${reports.length})</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Reported User</th>
+              <th>Reported By</th>
+              <th>Reason</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reports.map(r => `
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="student-avatar" style="width:34px;height:34px;font-size:0.75rem">${getInitials(r.reported_name)}</div>
+                    <div>
+                      <div style="font-weight:600;font-size:0.88rem">${r.reported_name}</div>
+                      <div style="font-size:0.75rem;color:var(--text-muted)">${r.reported_email}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="font-size:0.85rem">${r.reported_by_name}</td>
+                <td style="font-size:0.85rem;max-width:200px">${r.reason ? r.reason.substring(0, 60) + (r.reason.length > 60 ? '...' : '') : '—'}</td>
+                <td style="font-size:0.82rem;color:var(--text-muted)">${formatDate(r.created_at)}</td>
+                <td>
+                  ${r.is_blocked
+                    ? '<span class="badge badge-danger">Blocked</span>'
+                    : '<span class="badge badge-warning">Active</span>'
+                  }
+                </td>
+                <td>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn btn-outline btn-sm" onclick="viewDetails(${r.id})">👁 View</button>
+                    ${r.is_blocked
+                      ? `<button class="btn btn-success btn-sm" onclick="blockUser(${r.reported_user_id},'unblock',this)">✅ Unblock</button>`
+                      : `<button class="btn btn-danger btn-sm" onclick="blockUser(${r.reported_user_id},'block',this)">🔒 Block</button>`
+                    }
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function viewDetails(reportId) {
+  const r = reports.find(rep => rep.id === reportId);
+  if (!r) return;
+
+  selectedReportUserId = r.reported_user_id;
+
+  let messages = [];
+  try { messages = JSON.parse(r.last_messages || '[]'); } catch(e) {}
+
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+        <div>
+          <div class="form-label">Reported User</div>
+          <div style="font-weight:600">${r.reported_name}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">${r.reported_email}</div>
+        </div>
+        <div>
+          <div class="form-label">Reported By</div>
+          <div style="font-weight:600">${r.reported_by_name}</div>
+        </div>
+        <div>
+          <div class="form-label">Date</div>
+          <div>${formatDate(r.created_at)}</div>
+        </div>
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:6px">Reason</div>
+        <div class="alert alert-warning" style="margin:0">${r.reason || 'No reason provided'}</div>
+      </div>
+      ${messages.length > 0 ? `
+        <div>
+          <div class="form-label" style="margin-bottom:8px">Last 5 Messages (Context)</div>
+          <div style="background:var(--surface);border-radius:var(--radius);padding:1rem;display:flex;flex-direction:column;gap:8px;max-height:250px;overflow-y:auto">
+            ${messages.map(m => `
+              <div style="background:white;border-radius:8px;padding:0.7rem 1rem;border:1px solid var(--border);font-size:0.85rem">
+                <div style="font-weight:600;color:var(--primary);font-size:0.78rem;margin-bottom:3px">User #${m.sender_id}</div>
+                <div>${escHtml(m.message)}</div>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">${formatDateTime(m.timestamp)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '<div class="alert alert-info">No messages captured for this report.</div>'}
+    </div>
+  `;
+
+  document.getElementById('modalBlockBtn').onclick = () => blockUser(r.reported_user_id, r.is_blocked ? 'unblock' : 'block', null);
+  document.getElementById('modalBlockBtn').textContent = r.is_blocked ? '✅ Unblock User' : '🔒 Block User';
+  document.getElementById('modalBlockBtn').className = r.is_blocked ? 'btn btn-success' : 'btn btn-danger';
+
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(str));
+  return d.innerHTML;
+}
+
+function closeModal() { document.getElementById('detailModal').classList.remove('active'); }
+
+async function blockUser(userId, action, btn) {
+  if (!confirm(`${action === 'block' ? 'Block' : 'Unblock'} this user?`)) return;
+  if (btn) btn.disabled = true;
+
+  const res = await apiRequest(`/api/admin/${action}/${userId}`, { method: 'PUT' });
+  showToast(res.message, res.success ? 'success' : 'error');
+  if (res.success) {
+    closeModal();
+    await loadReports();
+  } else if (btn) btn.disabled = false;
+}
+
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('detailModal')) closeModal();
+});
+</script>
+</body>
+</html>

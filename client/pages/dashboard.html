@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard – SyncItUp</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-logo" href="/">Sync<span class="logo-dot">It</span>Up</a>
+  <div class="nav-toggle"><span></span><span></span><span></span></div>
+  <div class="nav-links">
+    <a href="/pages/dashboard.html" class="active">Dashboard</a>
+    <a href="/pages/match.html">Find Teammates</a>
+    <a href="/pages/chat.html">Messages</a>
+    <a href="/pages/profile.html">Profile</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-avatar" id="navAvatar" onclick="window.location='/pages/profile.html'">?</div>
+    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<main style="padding:2rem 0 3rem">
+  <div class="container">
+    <!-- Welcome Banner -->
+    <div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:var(--radius-xl);padding:2.5rem;color:white;margin-bottom:2.5rem;position:relative;overflow:hidden">
+      <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.05);top:-100px;right:-80px"></div>
+      <div style="position:relative;z-index:1">
+        <div style="font-size:0.85rem;opacity:0.8;margin-bottom:0.4rem">Welcome back 👋</div>
+        <h1 id="welcomeName" style="font-size:1.8rem;font-weight:800;margin-bottom:0.5rem">Loading...</h1>
+        <p id="welcomeCollege" style="opacity:0.8;font-size:0.92rem;margin-bottom:1.5rem"></p>
+        <a href="/pages/match.html" class="btn" style="background:white;color:var(--primary-dark);font-weight:700">🔍 Find Teammates</a>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-4" style="margin-bottom:2.5rem">
+      <div class="stat-card">
+        <div class="stat-icon blue">🤝</div>
+        <div><div class="stat-number" id="statConn">—</div><div class="stat-label">Connections</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow">📨</div>
+        <div><div class="stat-number" id="statPending">—</div><div class="stat-label">Pending Requests</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">💬</div>
+        <div><div class="stat-number" id="statMessages">—</div><div class="stat-label">Conversations</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📤</div>
+        <div><div class="stat-number" id="statSent">—</div><div class="stat-label">Requests Sent</div></div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="gap:2rem">
+      <!-- Incoming Requests -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📨 Incoming Requests</span>
+          <a href="/pages/match.html" style="font-size:0.82rem;color:var(--primary);font-weight:600">View All</a>
+        </div>
+        <div id="incomingRequests">
+          <div class="loading-overlay"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+
+      <!-- My Connections -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🤝 My Connections</span>
+          <a href="/pages/chat.html" style="font-size:0.82rem;color:var(--primary);font-weight:600">Chat</a>
+        </div>
+        <div id="connectionsList">
+          <div class="loading-overlay"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast-container"></div>
+
+<script src="/js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await requireAuth('student');
+  if (!user) return;
+
+  populateNavUser(user);
+  document.getElementById('welcomeName').textContent = `Hello, ${user.name}!`;
+  document.getElementById('welcomeCollege').textContent = `📍 ${user.college_name}`;
+
+  // Load stats
+  const [connRes, inReqRes, outReqRes, convRes] = await Promise.all([
+    apiRequest('/api/match/connections'),
+    apiRequest('/api/match/requests/incoming'),
+    apiRequest('/api/match/requests/outgoing'),
+    apiRequest('/api/chat/conversations'),
+  ]);
+
+  document.getElementById('statConn').textContent    = connRes.success ? connRes.connections.length : 0;
+  document.getElementById('statPending').textContent = inReqRes.success ? inReqRes.requests.length : 0;
+  document.getElementById('statMessages').textContent = convRes.success ? convRes.conversations.length : 0;
+  document.getElementById('statSent').textContent    = outReqRes.success ? outReqRes.requests.length : 0;
+
+  // Incoming requests
+  const inEl = document.getElementById('incomingRequests');
+  if (inReqRes.success && inReqRes.requests.length) {
+    inEl.innerHTML = inReqRes.requests.map(r => `
+      <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem 0;border-bottom:1px solid var(--border)">
+        <div class="student-avatar" style="width:42px;height:42px;font-size:0.85rem">${getInitials(r.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.9rem">${r.name}</div>
+          <div class="tags" style="margin-top:4px">${renderSkillTags(r.skills, 3)}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="respond(${r.id},'accepted',this)">✓</button>
+          <button class="btn btn-danger btn-sm" onclick="respond(${r.id},'rejected',this)">✗</button>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    inEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">No pending requests</div></div>`;
+  }
+
+  // Connections
+  const connEl = document.getElementById('connectionsList');
+  if (connRes.success && connRes.connections.length) {
+    connEl.innerHTML = connRes.connections.map(c => `
+      <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem 0;border-bottom:1px solid var(--border)">
+        <div class="student-avatar" style="width:42px;height:42px;font-size:0.85rem">${getInitials(c.name)}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:0.9rem">${c.name}</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)">${c.college_name}</div>
+        </div>
+        <a href="/pages/chat.html?partner=${c.id}" class="btn btn-primary btn-sm">💬 Chat</a>
+      </div>
+    `).join('');
+  } else {
+    connEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🤝</div><div class="empty-state-title">No connections yet</div><p style="font-size:0.85rem;color:var(--text-muted)"><a href="/pages/match.html" style="color:var(--primary)">Find teammates →</a></p></div>`;
+  }
+});
+
+async function respond(matchId, status, btn) {
+  btn.disabled = true;
+  const res = await apiRequest(`/api/match/request/${matchId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status })
+  });
+  showToast(res.message, res.success ? 'success' : 'error');
+  if (res.success) setTimeout(() => location.reload(), 1000);
+}
+</script>
+</body>
+</html>
