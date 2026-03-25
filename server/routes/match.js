@@ -5,8 +5,9 @@ const { User, Match, Message, Report } = require('../config/db');
 const { isAuthenticated } = require('../middleware/authMiddleware');
 const { isStudent } = require('../middleware/roleMiddleware');
 
-// ─── HELPER: valid ObjectId ────────────────────────────────────────
-function isValidId(id) { return mongoose.Types.ObjectId.isValid(id); }
+function isValidId(id) {
+  return id && mongoose.Types.ObjectId.isValid(String(id));
+}
 
 // ─── SEARCH STUDENTS ──────────────────────────────────────────────
 router.get('/search', isAuthenticated, isStudent, async (req, res) => {
@@ -16,18 +17,21 @@ router.get('/search', isAuthenticated, isStudent, async (req, res) => {
 
   try {
     const filter = {
-      _id: { $ne: userId },
+      _id: { $ne: new mongoose.Types.ObjectId(userId) },
       role: 'student',
       is_blocked: false,
       college_name: college
     };
 
-    if (skills)       filter.skills       = { $regex: skills, $options: 'i' };
-    if (interests)    filter.interests    = { $regex: interests, $options: 'i' };
+    if (skills)       filter.skills    = { $regex: skills,    $options: 'i' };
+    if (interests)    filter.interests = { $regex: interests,  $options: 'i' };
     if (availability) filter.availability = availability;
 
     const students = await User.find(filter).select('-password').lean();
-    res.json({ success: true, students });
+
+    // Ensure _id is returned as string for safe frontend use
+    const result = students.map(s => ({ ...s, _id: s._id.toString() }));
+    res.json({ success: true, students: result });
   } catch (err) {
     console.error('Search error:', err);
     res.json({ success: false, message: 'Search failed.' });
@@ -39,15 +43,48 @@ router.post('/request', isAuthenticated, isStudent, async (req, res) => {
   const { receiver_id } = req.body;
   const sender_id = req.session.user.id;
 
-  if (!receiver_id || !isValidId(receiver_id)) return res.json({ success: false, message: 'Invalid receiver.' });
+  if (!receiver_id) {
+    return res.json({ success: false, message: 'Receiver ID is required.' });
+  }
+
+  if (!isValidId(receiver_id)) {
+    return res.json({ success: false, message: 'Invalid receiver ID format.' });
+  }
+
+  if (String(receiver_id) === String(sender_id)) {
+    return res.json({ success: false, message: 'You cannot send a request to yourself.' });
+  }
 
   try {
-    const existing = await Match.findOne({ sender_id, receiver_id });
-    if (existing) return res.json({ success: false, message: 'Request already sent.' });
+    // Check receiver exists
+    const receiver = await User.findById(receiver_id);
+    if (!receiver) {
+      return res.json({ success: false, message: 'User not found.' });
+    }
+
+    if (receiver.is_blocked) {
+      return res.json({ success: false, message: 'This user is not available.' });
+    }
+
+    // Check if any request already exists (either direction)
+    const existing = await Match.findOne({
+      $or: [
+        { sender_id, receiver_id },
+        { sender_id: receiver_id, receiver_id: sender_id }
+      ]
+    });
+
+    if (existing) {
+      if (existing.status === 'accepted') {
+        return res.json({ success: false, message: 'You are already connected.' });
+      }
+      return res.json({ success: false, message: 'Request already sent.' });
+    }
 
     await Match.create({ sender_id, receiver_id, status: 'pending' });
-    res.json({ success: true, message: 'Collaboration request sent.' });
+    res.json({ success: true, message: 'Collaboration request sent successfully.' });
   } catch (err) {
+    console.error('Request error:', err);
     res.json({ success: false, message: 'Failed to send request.' });
   }
 });
@@ -61,8 +98,8 @@ router.get('/requests/incoming', isAuthenticated, isStudent, async (req, res) =>
       .lean();
 
     const data = requests.map(r => ({
-      id: r._id,
-      sender_id: r.sender_id._id,
+      id: r._id.toString(),
+      sender_id: r.sender_id._id.toString(),
       name: r.sender_id.name,
       email: r.sender_id.email,
       college_name: r.sender_id.college_name,
@@ -70,7 +107,6 @@ router.get('/requests/incoming', isAuthenticated, isStudent, async (req, res) =>
       availability: r.sender_id.availability,
       created_at: r.created_at
     }));
-
     res.json({ success: true, requests: data });
   } catch (err) {
     res.json({ success: false, message: 'Failed to fetch requests.' });
@@ -86,17 +122,12 @@ router.get('/requests/outgoing', isAuthenticated, isStudent, async (req, res) =>
       .lean();
 
     const data = requests.map(r => ({
-      id: r._id,
-      receiver_id: r.receiver_id._id,
+      id: r._id.toString(),
+      receiver_id: r.receiver_id._id.toString(),
       name: r.receiver_id.name,
-      email: r.receiver_id.email,
-      college_name: r.receiver_id.college_name,
-      skills: r.receiver_id.skills,
-      availability: r.receiver_id.availability,
       status: r.status,
       created_at: r.created_at
     }));
-
     res.json({ success: true, requests: data });
   } catch (err) {
     res.json({ success: false, message: 'Failed to fetch outgoing requests.' });
@@ -145,7 +176,8 @@ router.get('/connections', isAuthenticated, isStudent, async (req, res) => {
       is_blocked: false
     }).select('name email college_name skills availability').lean();
 
-    res.json({ success: true, connections });
+    const result = connections.map(c => ({ ...c, _id: c._id.toString() }));
+    res.json({ success: true, connections: result });
   } catch (err) {
     res.json({ success: false, message: 'Failed to fetch connections.' });
   }
@@ -166,13 +198,7 @@ router.post('/report', isAuthenticated, isStudent, async (req, res) => {
       ]
     }).sort({ timestamp: -1 }).limit(5).lean();
 
-    await Report.create({
-      reported_user_id,
-      reported_by,
-      reason,
-      last_messages: JSON.stringify(msgs)
-    });
-
+    await Report.create({ reported_user_id, reported_by, reason, last_messages: JSON.stringify(msgs) });
     res.json({ success: true, message: 'User reported.' });
   } catch (err) {
     console.error('Report error:', err);

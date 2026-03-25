@@ -9,7 +9,7 @@
 <body>
 
 <nav class="navbar">
-  <a class="nav-logo" href="/">Sync<span class="logo-dot">It</span>Up</a>
+  <a class="nav-logo" href="/">Sync<span>It</span>Up</a>
   <div class="nav-toggle"><span></span><span></span><span></span></div>
   <div class="nav-links">
     <a href="/pages/dashboard.html">Dashboard</a>
@@ -23,53 +23,35 @@
   </div>
 </nav>
 
-<!-- Profile Hero -->
 <div class="profile-hero">
   <div class="container text-center">
     <div class="profile-avatar-large" id="profileAvatar">?</div>
-    <h1 id="profileName" style="font-size:1.6rem;font-weight:800;margin-bottom:0.25rem">Loading...</h1>
-    <p id="profileCollege" style="opacity:0.8;font-size:0.92rem"></p>
+    <h1 id="profileName" style="font-size:1.5rem;font-weight:800;margin-bottom:4px">Loading...</h1>
+    <p id="profileCollege" style="opacity:0.75;font-size:0.875rem"></p>
   </div>
 </div>
 
 <div class="container profile-card-offset" style="padding-bottom:3rem">
-  <div class="grid-2" style="gap:2rem;align-items:start">
+  <div class="grid-2" style="gap:1.5rem;align-items:start">
 
-    <!-- Profile Info Card -->
+    <!-- Profile Card -->
     <div class="card">
       <div class="card-header">
-        <span class="card-title">📋 My Profile</span>
-        <button class="btn btn-outline btn-sm" onclick="toggleEdit()">✏️ Edit</button>
+        <span class="card-title">Profile Details</span>
+        <button class="btn btn-outline btn-sm" onclick="toggleEdit()">Edit Profile</button>
       </div>
 
       <!-- View Mode -->
       <div id="viewMode">
-        <div style="display:flex;flex-direction:column;gap:1.25rem">
-          <div>
-            <div class="form-label" style="margin-bottom:6px">Email</div>
-            <div id="viewEmail" style="color:var(--text-primary)">—</div>
-          </div>
-          <div>
-            <div class="form-label" style="margin-bottom:6px">Availability</div>
-            <div id="viewAvailability">—</div>
-          </div>
-          <div>
-            <div class="form-label" style="margin-bottom:6px">Skills</div>
-            <div class="tags" id="viewSkills">—</div>
-          </div>
-          <div>
-            <div class="form-label" style="margin-bottom:6px">Interests</div>
-            <div class="tags" id="viewInterests">—</div>
-          </div>
-          <div>
-            <div class="form-label" style="margin-bottom:6px">Bio</div>
-            <p id="viewBio" style="color:var(--text-secondary);font-size:0.9rem;line-height:1.65">—</p>
-          </div>
-          <div>
-            <div class="form-label" style="margin-bottom:6px">Member Since</div>
-            <div id="viewJoined" style="color:var(--text-muted);font-size:0.88rem">—</div>
-          </div>
-        </div>
+        <dl style="display:flex;flex-direction:column;gap:1.1rem">
+          <div><dt class="form-label" style="margin-bottom:4px">Email</dt><dd id="viewEmail" style="color:var(--text-primary);font-size:0.875rem">—</dd></div>
+          <div><dt class="form-label" style="margin-bottom:4px">College</dt><dd id="viewCollege" style="font-size:0.875rem">—</dd></div>
+          <div><dt class="form-label" style="margin-bottom:6px">Availability</dt><dd id="viewAvailability">—</dd></div>
+          <div><dt class="form-label" style="margin-bottom:6px">Skills</dt><dd class="tags" id="viewSkills">—</dd></div>
+          <div><dt class="form-label" style="margin-bottom:6px">Interests</dt><dd class="tags" id="viewInterests">—</dd></div>
+          <div><dt class="form-label" style="margin-bottom:4px">Bio</dt><dd id="viewBio" style="color:var(--text-secondary);font-size:0.875rem;line-height:1.65">—</dd></div>
+          <div><dt class="form-label" style="margin-bottom:4px">Member Since</dt><dd id="viewJoined" style="color:var(--text-muted);font-size:0.82rem">—</dd></div>
+        </dl>
       </div>
 
       <!-- Edit Mode -->
@@ -85,27 +67,27 @@
             <input class="form-input" type="text" id="editCollege" required/>
           </div>
           <div class="form-group">
-            <label class="form-label">Skills <span style="color:var(--text-muted);font-weight:400">(comma-separated)</span></label>
-            <input class="form-input" type="text" id="editSkills" placeholder="Frontend, Backend, AI, ML..."/>
+            <label class="form-label">Skills <span class="form-hint">(comma-separated)</span></label>
+            <input class="form-input" type="text" id="editSkills" placeholder="Frontend, Backend, AI..."/>
           </div>
           <div class="form-group">
-            <label class="form-label">Interests <span style="color:var(--text-muted);font-weight:400">(comma-separated)</span></label>
+            <label class="form-label">Interests <span class="form-hint">(comma-separated)</span></label>
             <input class="form-input" type="text" id="editInterests" placeholder="Hackathons, Open Source..."/>
           </div>
           <div class="form-group">
             <label class="form-label">Availability</label>
             <select class="form-select" id="editAvailability">
-              <option value="full-time">Full-Time</option>
-              <option value="part-time">Part-Time</option>
+              <option value="full-time">Full Time</option>
+              <option value="part-time">Part Time</option>
               <option value="weekends">Weekends</option>
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Bio</label>
-            <textarea class="form-textarea" id="editBio" placeholder="Tell others about yourself, your experience, what you're looking for..."></textarea>
+            <textarea class="form-textarea" id="editBio" placeholder="Tell others about yourself..."></textarea>
           </div>
-          <div style="display:flex;gap:0.75rem">
-            <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+          <div style="display:flex;gap:0.65rem">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
             <button type="button" class="btn btn-secondary" onclick="toggleEdit()">Cancel</button>
           </div>
         </form>
@@ -113,31 +95,23 @@
     </div>
 
     <!-- Sidebar -->
-    <div style="display:flex;flex-direction:column;gap:1.5rem">
-      <!-- Quick Links -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
       <div class="card" style="padding:1.25rem">
-        <div class="card-title" style="margin-bottom:1rem">Quick Actions</div>
-        <div style="display:flex;flex-direction:column;gap:0.6rem">
-          <a href="/pages/match.html" class="btn btn-primary btn-block">🔍 Find Teammates</a>
-          <a href="/pages/chat.html" class="btn btn-outline btn-block">💬 My Messages</a>
-          <a href="/pages/dashboard.html" class="btn btn-secondary btn-block">🏠 Dashboard</a>
+        <div class="card-title" style="margin-bottom:0.9rem">Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem">
+          <a href="/pages/match.html" class="btn btn-primary btn-block">Find Teammates</a>
+          <a href="/pages/chat.html" class="btn btn-outline btn-block">Messages</a>
+          <a href="/pages/dashboard.html" class="btn btn-secondary btn-block">Dashboard</a>
         </div>
       </div>
-
-      <!-- Skill categories hint -->
       <div class="card" style="padding:1.25rem">
-        <div class="card-title" style="margin-bottom:0.75rem">💡 Popular Skill Tags</div>
+        <div class="card-title" style="margin-bottom:0.75rem">Popular Skills</div>
         <div class="tags" style="gap:6px">
-          <span class="tag tag-primary">Frontend</span>
-          <span class="tag tag-primary">Backend</span>
-          <span class="tag tag-primary">AI</span>
-          <span class="tag tag-primary">ML</span>
-          <span class="tag tag-primary">IoT</span>
-          <span class="tag tag-primary">UI UX</span>
-          <span class="tag tag-primary">Cybersecurity</span>
-          <span class="tag tag-primary">Mobile</span>
-          <span class="tag tag-primary">Cloud</span>
-          <span class="tag tag-primary">DevOps</span>
+          <span class="tag tag-primary">Frontend</span><span class="tag tag-primary">Backend</span>
+          <span class="tag tag-primary">AI</span><span class="tag tag-primary">ML</span>
+          <span class="tag tag-primary">IoT</span><span class="tag tag-primary">UI UX</span>
+          <span class="tag tag-primary">Mobile</span><span class="tag tag-primary">Cloud</span>
+          <span class="tag tag-primary">DevOps</span><span class="tag tag-primary">Cybersecurity</span>
         </div>
       </div>
     </div>
@@ -147,8 +121,6 @@
 <div id="toast-container"></div>
 <script src="/js/app.js"></script>
 <script>
-let currentUser = null;
-
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth('student');
   if (!user) return;
@@ -160,27 +132,23 @@ async function loadProfile() {
   const res = await apiRequest('/api/auth/profile');
   if (!res.success) { showToast('Failed to load profile', 'error'); return; }
   const u = res.user;
-  currentUser = u;
-
   document.getElementById('profileAvatar').textContent = getInitials(u.name);
-  document.getElementById('profileName').textContent = u.name;
-  document.getElementById('profileCollege').textContent = `📍 ${u.college_name}`;
-  document.getElementById('navAvatar').textContent = getInitials(u.name);
-
-  document.getElementById('viewEmail').textContent = u.email;
+  document.getElementById('profileName').textContent   = u.name;
+  document.getElementById('profileCollege').textContent = u.college_name;
+  document.getElementById('navAvatar').textContent     = getInitials(u.name);
+  document.getElementById('viewEmail').textContent     = u.email;
+  document.getElementById('viewCollege').textContent   = u.college_name;
   document.getElementById('viewAvailability').innerHTML = renderAvailability(u.availability);
-  document.getElementById('viewSkills').innerHTML = renderSkillTags(u.skills, 10) || '<span class="text-muted">Not set</span>';
-  document.getElementById('viewInterests').innerHTML = renderSkillTags(u.interests, 10) || '<span class="text-muted">Not set</span>';
-  document.getElementById('viewBio').textContent = u.bio || 'No bio added yet.';
-  document.getElementById('viewJoined').textContent = formatDate(u.created_at);
-
-  // Pre-fill edit form
-  document.getElementById('editName').value = u.name;
-  document.getElementById('editCollege').value = u.college_name;
-  document.getElementById('editSkills').value = u.skills || '';
-  document.getElementById('editInterests').value = u.interests || '';
+  document.getElementById('viewSkills').innerHTML      = renderSkillTags(u.skills, 10);
+  document.getElementById('viewInterests').innerHTML   = renderInterestTags(u.interests, 10);
+  document.getElementById('viewBio').textContent       = u.bio || 'No bio yet.';
+  document.getElementById('viewJoined').textContent    = 'Joined ' + formatDate(u.created_at);
+  document.getElementById('editName').value       = u.name;
+  document.getElementById('editCollege').value    = u.college_name;
+  document.getElementById('editSkills').value     = u.skills || '';
+  document.getElementById('editInterests').value  = u.interests || '';
   document.getElementById('editAvailability').value = u.availability || 'full-time';
-  document.getElementById('editBio').value = u.bio || '';
+  document.getElementById('editBio').value        = u.bio || '';
 }
 
 function toggleEdit() {
@@ -193,27 +161,18 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
   const alertEl = document.getElementById('profileAlert');
   const btn = e.target.querySelector('button[type="submit"]');
   btn.disabled = true;
-
-  const payload = {
+  btn.textContent = 'Saving...';
+  const res = await apiRequest('/api/auth/profile', { method: 'PUT', body: JSON.stringify({
     name: document.getElementById('editName').value.trim(),
     college_name: document.getElementById('editCollege').value.trim(),
     skills: document.getElementById('editSkills').value.trim(),
     interests: document.getElementById('editInterests').value.trim(),
     availability: document.getElementById('editAvailability').value,
     bio: document.getElementById('editBio').value.trim()
-  };
-
-  const res = await apiRequest('/api/auth/profile', { method: 'PUT', body: JSON.stringify(payload) });
-  if (res.success) {
-    showToast('Profile updated!', 'success');
-    toggleEdit();
-    await loadProfile();
-  } else {
-    alertEl.className = 'alert alert-error';
-    alertEl.textContent = res.message;
-    alertEl.classList.remove('d-none');
-  }
-  btn.disabled = false;
+  })});
+  if (res.success) { showToast('Profile updated!', 'success'); toggleEdit(); await loadProfile(); }
+  else { alertEl.className='alert alert-error'; alertEl.textContent=res.message; alertEl.classList.remove('d-none'); }
+  btn.disabled = false; btn.textContent = 'Save Changes';
 });
 </script>
 </body>

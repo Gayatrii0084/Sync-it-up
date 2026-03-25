@@ -8,9 +8,8 @@
 </head>
 <body>
 
-<!-- NAVBAR -->
 <nav class="navbar">
-  <a class="nav-logo" href="/">Sync<span class="logo-dot">It</span>Up</a>
+  <a class="nav-logo" href="/">Sync<span>It</span>Up</a>
   <div class="nav-toggle"><span></span><span></span><span></span></div>
   <div class="nav-links">
     <a href="/pages/dashboard.html" class="active">Dashboard</a>
@@ -24,79 +23,77 @@
   </div>
 </nav>
 
-<!-- PAGE -->
-<main style="padding:2rem 0 3rem">
+<main style="padding:1.5rem 0 3rem">
   <div class="container">
+
     <!-- Welcome Banner -->
-    <div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:var(--radius-xl);padding:2.5rem;color:white;margin-bottom:2.5rem;position:relative;overflow:hidden">
-      <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.05);top:-100px;right:-80px"></div>
+    <div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:var(--radius-xl);padding:2rem 2.25rem;color:white;margin-bottom:1.75rem;position:relative;overflow:hidden">
+      <div style="position:absolute;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,0.06);top:-110px;right:-70px;pointer-events:none"></div>
       <div style="position:relative;z-index:1">
-        <div style="font-size:0.85rem;opacity:0.8;margin-bottom:0.4rem">Welcome back 👋</div>
-        <h1 id="welcomeName" style="font-size:1.8rem;font-weight:800;margin-bottom:0.5rem">Loading...</h1>
-        <p id="welcomeCollege" style="opacity:0.8;font-size:0.92rem;margin-bottom:1.5rem"></p>
-        <a href="/pages/match.html" class="btn" style="background:white;color:var(--primary-dark);font-weight:700">🔍 Find Teammates</a>
+        <div style="font-size:0.78rem;opacity:0.75;font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.6px">Welcome back</div>
+        <h1 id="welcomeName" style="font-size:1.6rem;font-weight:800;margin-bottom:4px">Loading...</h1>
+        <p id="welcomeCollege" style="opacity:0.75;font-size:0.85rem;margin-bottom:1.25rem"></p>
+        <a href="/pages/match.html" class="btn" style="background:white;color:var(--primary-dark);font-weight:700;font-size:0.85rem">Find Teammates</a>
       </div>
     </div>
 
     <!-- Stats -->
-    <div class="grid-4" style="margin-bottom:2.5rem">
+    <div class="grid-4" style="margin-bottom:1.75rem">
       <div class="stat-card">
-        <div class="stat-icon blue">🤝</div>
+        <div class="stat-icon blue" style="font-size:1rem">&#128101;</div>
         <div><div class="stat-number" id="statConn">—</div><div class="stat-label">Connections</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon yellow">📨</div>
+        <div class="stat-icon yellow" style="font-size:1rem">&#9993;</div>
         <div><div class="stat-number" id="statPending">—</div><div class="stat-label">Pending Requests</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green">💬</div>
+        <div class="stat-icon green" style="font-size:1rem">&#128172;</div>
         <div><div class="stat-number" id="statMessages">—</div><div class="stat-label">Conversations</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon blue">📤</div>
-        <div><div class="stat-number" id="statSent">—</div><div class="stat-label">Requests Sent</div></div>
+        <div class="stat-icon blue" style="font-size:1rem">&#128228;</div>
+        <div><div class="stat-number" id="statSent">—</div><div class="stat-label">Sent Requests</div></div>
       </div>
     </div>
 
-    <div class="grid-2" style="gap:2rem">
+    <div class="grid-2" style="gap:1.5rem">
       <!-- Incoming Requests -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">📨 Incoming Requests</span>
-          <a href="/pages/match.html" style="font-size:0.82rem;color:var(--primary);font-weight:600">View All</a>
+          <span class="card-title">Incoming Requests</span>
+          <a href="/pages/match.html" style="font-size:0.8rem;color:var(--primary);font-weight:600">View All</a>
         </div>
         <div id="incomingRequests">
-          <div class="loading-overlay"><div class="spinner"></div> Loading...</div>
+          <div class="loading-overlay"><div class="spinner"></div></div>
         </div>
       </div>
 
       <!-- My Connections -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">🤝 My Connections</span>
-          <a href="/pages/chat.html" style="font-size:0.82rem;color:var(--primary);font-weight:600">Chat</a>
+          <span class="card-title">My Connections</span>
+          <a href="/pages/chat.html" style="font-size:0.8rem;color:var(--primary);font-weight:600">Messages</a>
         </div>
         <div id="connectionsList">
-          <div class="loading-overlay"><div class="spinner"></div> Loading...</div>
+          <div class="loading-overlay"><div class="spinner"></div></div>
         </div>
       </div>
     </div>
+
   </div>
 </main>
 
 <div id="toast-container"></div>
-
 <script src="/js/app.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth('student');
   if (!user) return;
-
   populateNavUser(user);
-  document.getElementById('welcomeName').textContent = `Hello, ${user.name}!`;
-  document.getElementById('welcomeCollege').textContent = `📍 ${user.college_name}`;
+  document.getElementById('welcomeName').textContent = `Hello, ${user.name}`;
+  document.getElementById('welcomeCollege').textContent = user.college_name;
 
-  // Load stats
   const [connRes, inReqRes, outReqRes, convRes] = await Promise.all([
     apiRequest('/api/match/connections'),
     apiRequest('/api/match/requests/incoming'),
@@ -104,57 +101,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     apiRequest('/api/chat/conversations'),
   ]);
 
-  document.getElementById('statConn').textContent    = connRes.success ? connRes.connections.length : 0;
-  document.getElementById('statPending').textContent = inReqRes.success ? inReqRes.requests.length : 0;
-  document.getElementById('statMessages').textContent = convRes.success ? convRes.conversations.length : 0;
-  document.getElementById('statSent').textContent    = outReqRes.success ? outReqRes.requests.length : 0;
+  document.getElementById('statConn').textContent     = connRes.success    ? (connRes.connections?.length  || 0) : 0;
+  document.getElementById('statPending').textContent  = inReqRes.success   ? (inReqRes.requests?.length    || 0) : 0;
+  document.getElementById('statMessages').textContent = convRes.success     ? (convRes.conversations?.length|| 0) : 0;
+  document.getElementById('statSent').textContent     = outReqRes.success  ? (outReqRes.requests?.length   || 0) : 0;
 
   // Incoming requests
   const inEl = document.getElementById('incomingRequests');
-  if (inReqRes.success && inReqRes.requests.length) {
+  if (inReqRes.success && inReqRes.requests?.length) {
     inEl.innerHTML = inReqRes.requests.map(r => `
-      <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem 0;border-bottom:1px solid var(--border)">
-        <div class="student-avatar" style="width:42px;height:42px;font-size:0.85rem">${getInitials(r.name)}</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div class="user-card-avatar" style="width:40px;height:40px;font-size:0.82rem">${getInitials(r.name)}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:0.9rem">${r.name}</div>
+          <div style="font-weight:600;font-size:0.875rem">${r.name}</div>
           <div class="tags" style="margin-top:4px">${renderSkillTags(r.skills, 3)}</div>
         </div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-success btn-sm" onclick="respond(${r.id},'accepted',this)">✓</button>
-          <button class="btn btn-danger btn-sm" onclick="respond(${r.id},'rejected',this)">✗</button>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="btn btn-success btn-sm" onclick="respond('${r.id}','accepted',this)">Accept</button>
+          <button class="btn btn-secondary btn-sm" onclick="respond('${r.id}','rejected',this)">Decline</button>
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
   } else {
-    inEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">No pending requests</div></div>`;
+    inEl.innerHTML = `<div class="empty-state" style="padding:1.5rem 1rem"><div class="empty-state-title">No pending requests</div></div>`;
   }
 
   // Connections
   const connEl = document.getElementById('connectionsList');
-  if (connRes.success && connRes.connections.length) {
+  if (connRes.success && connRes.connections?.length) {
     connEl.innerHTML = connRes.connections.map(c => `
-      <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem 0;border-bottom:1px solid var(--border)">
-        <div class="student-avatar" style="width:42px;height:42px;font-size:0.85rem">${getInitials(c.name)}</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div class="user-card-avatar" style="width:40px;height:40px;font-size:0.82rem">${getInitials(c.name)}</div>
         <div style="flex:1">
-          <div style="font-weight:600;font-size:0.9rem">${c.name}</div>
-          <div style="font-size:0.78rem;color:var(--text-muted)">${c.college_name}</div>
+          <div style="font-weight:600;font-size:0.875rem">${c.name}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">${c.college_name}</div>
         </div>
-        <a href="/pages/chat.html?partner=${c.id}" class="btn btn-primary btn-sm">💬 Chat</a>
-      </div>
-    `).join('');
+        <a href="/pages/chat.html?partner=${c._id}" class="btn btn-primary btn-sm">Message</a>
+      </div>`).join('');
   } else {
-    connEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🤝</div><div class="empty-state-title">No connections yet</div><p style="font-size:0.85rem;color:var(--text-muted)"><a href="/pages/match.html" style="color:var(--primary)">Find teammates →</a></p></div>`;
+    connEl.innerHTML = `<div class="empty-state" style="padding:1.5rem 1rem"><div class="empty-state-title">No connections yet</div><p style="font-size:0.82rem"><a href="/pages/match.html" style="color:var(--primary)">Find your first teammate</a></p></div>`;
   }
 });
 
 async function respond(matchId, status, btn) {
   btn.disabled = true;
-  const res = await apiRequest(`/api/match/request/${matchId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ status })
-  });
+  const res = await apiRequest(`/api/match/request/${matchId}`, { method: 'PUT', body: JSON.stringify({ status }) });
   showToast(res.message, res.success ? 'success' : 'error');
   if (res.success) setTimeout(() => location.reload(), 1000);
+  else btn.disabled = false;
 }
 </script>
 </body>

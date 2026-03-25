@@ -9,7 +9,7 @@
 <body>
 
 <nav class="navbar">
-  <a class="nav-logo" href="/">Sync<span class="logo-dot">It</span>Up</a>
+  <a class="nav-logo" href="/">Sync<span>It</span>Up</a>
   <div class="nav-toggle"><span></span><span></span><span></span></div>
   <div class="nav-links">
     <a href="/pages/admin.html" class="active">Dashboard</a>
@@ -17,81 +17,80 @@
   </div>
   <div class="nav-actions">
     <div class="nav-avatar" id="navAvatar" style="cursor:default">A</div>
-    <span style="font-size:0.8rem;font-weight:600;color:var(--primary);background:var(--primary-pale);padding:4px 10px;border-radius:100px">Admin</span>
+    <span class="badge badge-primary">Admin</span>
     <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
   </div>
 </nav>
 
-<main style="padding:2rem 0 3rem">
+<main style="padding:1.5rem 0 3rem">
   <div class="container">
-    <div class="page-header">
-      <h1 class="page-title">⚙️ Admin Dashboard</h1>
+    <div class="page-header" style="padding-top:1rem">
+      <h1 class="page-title">Admin Dashboard</h1>
       <p class="page-subtitle" id="adminCollege">Managing students from your college.</p>
     </div>
 
     <!-- Stats -->
-    <div class="grid-3" style="margin-bottom:2.5rem">
+    <div class="grid-3" style="margin-bottom:1.75rem">
       <div class="stat-card">
-        <div class="stat-icon blue">🎓</div>
+        <div class="stat-icon blue" style="font-size:1rem">&#127891;</div>
         <div><div class="stat-number" id="statTotal">—</div><div class="stat-label">Total Students</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon yellow">🚨</div>
+        <div class="stat-icon yellow" style="font-size:1rem">&#9888;</div>
         <div><div class="stat-number" id="statReported">—</div><div class="stat-label">Reported Users</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon red">🔒</div>
+        <div class="stat-icon red" style="font-size:1rem">&#128274;</div>
         <div><div class="stat-number" id="statBlocked">—</div><div class="stat-label">Blocked Users</div></div>
       </div>
     </div>
 
     <!-- Tabs -->
-    <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;overflow-x:auto">
-      <button class="btn btn-primary btn-sm" id="tabStudents" onclick="showTab('students')">🎓 All Students</button>
-      <button class="btn btn-secondary btn-sm" id="tabBlocked" onclick="showTab('blocked')">🔒 Blocked</button>
-      <a href="/pages/reports.html" class="btn btn-secondary btn-sm">🚨 Reports</a>
+    <div style="display:flex;gap:0.4rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border);padding-bottom:0">
+      <button id="tabStudentsBtn" onclick="showTab('students')"
+        style="padding:8px 16px;font-size:0.85rem;font-weight:600;border:none;background:none;cursor:pointer;color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-1px">
+        All Students
+      </button>
+      <button id="tabBlockedBtn" onclick="showTab('blocked')"
+        style="padding:8px 16px;font-size:0.85rem;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px">
+        Blocked Users
+      </button>
+      <a href="/pages/reports.html"
+        style="padding:8px 16px;font-size:0.85rem;font-weight:600;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px">
+        Reports
+      </a>
     </div>
 
-    <!-- Students Table -->
+    <!-- Students table -->
     <div id="studentsSection">
       <div class="card" style="padding:0">
-        <div class="card-header" style="padding:1.25rem 1.5rem">
+        <div class="card-header" style="padding:1rem 1.25rem">
           <span class="card-title">All Students</span>
-          <input type="text" class="form-input" id="studentSearch" placeholder="Search by name or email..." style="max-width:240px;padding:0.5rem 0.9rem;font-size:0.85rem" oninput="filterStudentTable(this.value)"/>
+          <input type="text" class="form-input" id="studentSearch" placeholder="Search by name or email..."
+            style="max-width:220px;padding:6px 10px;font-size:0.82rem" oninput="filterStudentTable(this.value)"/>
         </div>
         <div class="table-wrapper">
           <table>
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Email</th>
-                <th>Skills</th>
-                <th>Availability</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Student</th><th>Email</th><th>Skills</th><th>Availability</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="studentTableBody">
-              <tr><td colspan="6" style="text-align:center;padding:2rem"><div class="loading-overlay" style="padding:1rem"><div class="spinner"></div></div></td></tr>
+              <tr><td colspan="6"><div class="loading-overlay"><div class="spinner"></div></div></td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- Blocked Section -->
+    <!-- Blocked table -->
     <div id="blockedSection" class="d-none">
       <div class="card" style="padding:0">
-        <div class="card-header" style="padding:1.25rem 1.5rem">
-          <span class="card-title">🔒 Blocked Users</span>
+        <div class="card-header" style="padding:1rem 1.25rem">
+          <span class="card-title">Blocked Users</span>
         </div>
         <div class="table-wrapper">
           <table>
-            <thead>
-              <tr><th>Name</th><th>Email</th><th>Blocked Since</th><th>Actions</th></tr>
-            </thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Blocked Since</th><th>Actions</th></tr></thead>
             <tbody id="blockedTableBody">
-              <tr><td colspan="4" style="text-align:center;padding:2rem"><div class="loading-overlay" style="padding:1rem"><div class="spinner"></div></div></td></tr>
+              <tr><td colspan="4"><div class="loading-overlay"><div class="spinner"></div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -109,97 +108,78 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth('admin');
   if (!user) return;
   document.getElementById('navAvatar').textContent = getInitials(user.name);
-  document.getElementById('adminCollege').textContent = `📍 Managing students from: ${user.college_name}`;
-
-  await loadStats();
-  await loadStudents();
+  document.getElementById('adminCollege').textContent = `College: ${user.college_name}`;
+  await Promise.all([loadStats(), loadStudents()]);
 });
 
 async function loadStats() {
   const res = await apiRequest('/api/admin/stats');
   if (res.success) {
-    document.getElementById('statTotal').textContent = res.stats.totalStudents;
+    document.getElementById('statTotal').textContent    = res.stats.totalStudents;
     document.getElementById('statReported').textContent = res.stats.reportedUsers;
-    document.getElementById('statBlocked').textContent = res.stats.blockedUsers;
+    document.getElementById('statBlocked').textContent  = res.stats.blockedUsers;
   }
 }
 
 async function loadStudents() {
   const res = await apiRequest('/api/admin/students');
   const tbody = document.getElementById('studentTableBody');
-  if (!res.success) { tbody.innerHTML = `<tr><td colspan="6" class="text-center">Failed to load</td></tr>`; return; }
+  if (!res.success) { tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding:2rem;color:var(--text-muted)">Failed to load</td></tr>`; return; }
   allStudents = res.students;
   renderStudentTable(allStudents);
 }
 
 function renderStudentTable(students) {
   const tbody = document.getElementById('studentTableBody');
-  if (!students.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No students found.</td></tr>`;
-    return;
-  }
+  if (!students.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No students found.</td></tr>`; return; }
   tbody.innerHTML = students.map(s => `
     <tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <div class="student-avatar" style="width:36px;height:36px;font-size:0.78rem">${getInitials(s.name)}</div>
-          <div>
-            <div style="font-weight:600;font-size:0.88rem">${s.name}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted)">#${s.id}</div>
-          </div>
+          <div class="user-card-avatar" style="width:34px;height:34px;font-size:0.75rem">${getInitials(s.name)}</div>
+          <div style="font-weight:600;font-size:0.875rem">${s.name}</div>
         </div>
       </td>
-      <td style="font-size:0.85rem">${s.email}</td>
+      <td style="font-size:0.82rem;color:var(--text-secondary)">${s.email}</td>
       <td><div class="tags">${renderSkillTags(s.skills, 3)}</div></td>
       <td>${renderAvailability(s.availability)}</td>
-      <td>
-        ${s.is_blocked
-          ? '<span class="badge badge-danger">Blocked</span>'
-          : '<span class="badge badge-success">Active</span>'
-        }
-      </td>
+      <td>${s.is_blocked ? '<span class="badge badge-danger">Blocked</span>' : '<span class="badge badge-success">Active</span>'}</td>
       <td>
         <div style="display:flex;gap:6px">
           ${s.is_blocked
-            ? `<button class="btn btn-success btn-sm" onclick="toggleBlock(${s.id},'unblock',this)">✅ Unblock</button>`
-            : `<button class="btn btn-danger btn-sm" onclick="toggleBlock(${s.id},'block',this)">🔒 Block</button>`
-          }
-          <button class="btn btn-secondary btn-sm" onclick="deleteUser(${s.id},this)" style="color:var(--danger)">🗑️</button>
+            ? `<button class="btn btn-success btn-sm" onclick="toggleBlock('${s._id}','unblock',this)">Unblock</button>`
+            : `<button class="btn btn-danger btn-sm" onclick="toggleBlock('${s._id}','block',this)">Block</button>`}
+          <button class="btn btn-secondary btn-sm" onclick="deleteUser('${s._id}',this)" style="color:var(--danger)">Delete</button>
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
 
-function filterStudentTable(query) {
-  const q = query.toLowerCase();
-  const filtered = allStudents.filter(s => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q));
+function filterStudentTable(q) {
+  const filtered = allStudents.filter(s => s.name.toLowerCase().includes(q.toLowerCase()) || s.email.toLowerCase().includes(q.toLowerCase()));
   renderStudentTable(filtered);
-}
-
-async function loadBlocked() {
-  const res = await apiRequest('/api/admin/blocked');
-  const tbody = document.getElementById('blockedTableBody');
-  if (!res.success || !res.users.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted)">No blocked users.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = res.users.map(u => `
-    <tr>
-      <td style="font-weight:600">${u.name}</td>
-      <td>${u.email}</td>
-      <td style="font-size:0.82rem;color:var(--text-muted)">${formatDate(u.created_at)}</td>
-      <td><button class="btn btn-success btn-sm" onclick="toggleBlock(${u.id},'unblock',this)">✅ Unblock</button></td>
-    </tr>
-  `).join('');
 }
 
 function showTab(tab) {
   document.getElementById('studentsSection').classList.toggle('d-none', tab !== 'students');
   document.getElementById('blockedSection').classList.toggle('d-none', tab !== 'blocked');
-  document.getElementById('tabStudents').className = tab === 'students' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
-  document.getElementById('tabBlocked').className  = tab === 'blocked'  ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  const style = (active) => `padding:8px 16px;font-size:0.85rem;font-weight:600;border:none;background:none;cursor:pointer;margin-bottom:-1px;border-bottom:2px solid ${active ? 'var(--primary)' : 'transparent'};color:${active ? 'var(--primary)' : 'var(--text-muted)'}`;
+  document.getElementById('tabStudentsBtn').style.cssText = style(tab === 'students');
+  document.getElementById('tabBlockedBtn').style.cssText  = style(tab === 'blocked');
   if (tab === 'blocked') loadBlocked();
+}
+
+async function loadBlocked() {
+  const res = await apiRequest('/api/admin/blocked');
+  const tbody = document.getElementById('blockedTableBody');
+  if (!res.success || !res.users.length) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted)">No blocked users.</td></tr>`; return; }
+  tbody.innerHTML = res.users.map(u => `
+    <tr>
+      <td style="font-weight:600">${u.name}</td>
+      <td style="color:var(--text-secondary);font-size:0.85rem">${u.email}</td>
+      <td style="font-size:0.82rem;color:var(--text-muted)">${formatDate(u.created_at)}</td>
+      <td><button class="btn btn-success btn-sm" onclick="toggleBlock('${u._id}','unblock',this)">Unblock</button></td>
+    </tr>`).join('');
 }
 
 async function toggleBlock(userId, action, btn) {

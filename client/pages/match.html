@@ -9,7 +9,7 @@
 <body>
 
 <nav class="navbar">
-  <a class="nav-logo" href="/">Sync<span class="logo-dot">It</span>Up</a>
+  <a class="nav-logo" href="/">Sync<span>It</span>Up</a>
   <div class="nav-toggle"><span></span><span></span><span></span></div>
   <div class="nav-links">
     <a href="/pages/dashboard.html">Dashboard</a>
@@ -23,11 +23,11 @@
   </div>
 </nav>
 
-<main style="padding:2rem 0 3rem">
+<main style="padding:1.5rem 0 3rem">
   <div class="container">
-    <div class="page-header">
-      <h1 class="page-title">🔍 Find Your Teammate</h1>
-      <p class="page-subtitle">Discover students from your college with matching skills and interests.</p>
+    <div class="page-header" style="padding-top:1rem">
+      <h1 class="page-title">Find Teammates</h1>
+      <p class="page-subtitle">Discover students from your college — filter by skills, interests, and availability.</p>
     </div>
 
     <!-- Search Bar -->
@@ -43,23 +43,24 @@
       <div class="form-group">
         <label class="form-label">Availability</label>
         <select class="form-select" id="filterAvailability">
-          <option value="">Any Availability</option>
-          <option value="full-time">Full-Time</option>
-          <option value="part-time">Part-Time</option>
+          <option value="">Any</option>
+          <option value="full-time">Full Time</option>
+          <option value="part-time">Part Time</option>
           <option value="weekends">Weekends</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="searchStudents()">🔍 Search</button>
-      <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+      <div class="search-actions">
+        <button class="btn btn-primary" onclick="searchStudents()">Search</button>
+        <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+      </div>
     </div>
+
+    <!-- Results Count -->
+    <div id="resultsCount" style="margin-bottom:1rem;font-size:0.82rem;color:var(--text-muted);font-weight:500"></div>
 
     <!-- Results -->
     <div id="searchResults">
-      <div class="empty-state">
-        <div class="empty-state-icon">🔍</div>
-        <div class="empty-state-title">Search for teammates</div>
-        <div class="empty-state-text">Use the filters above or click Search to see all students from your college.</div>
-      </div>
+      <div class="loading-overlay"><div class="spinner"></div><span>Loading students...</span></div>
     </div>
   </div>
 </main>
@@ -68,11 +69,13 @@
 <div class="modal-overlay" id="reportModal">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">🚨 Report User</span>
-      <button class="modal-close" onclick="closeModal('reportModal')">✕</button>
+      <span class="modal-title">Report User</span>
+      <button class="modal-close" onclick="closeModal('reportModal')">&#x2715;</button>
     </div>
     <div class="modal-body">
-      <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1rem">Select a reason for reporting <strong id="reportTargetName"></strong>:</p>
+      <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem">
+        Reporting <strong id="reportTargetName"></strong>. Select a reason:
+      </p>
       <div class="reason-options">
         <label class="reason-option"><input type="radio" name="reportReason" value="Harassment"/> Harassment</label>
         <label class="reason-option"><input type="radio" name="reportReason" value="Inappropriate content"/> Inappropriate Content</label>
@@ -81,7 +84,7 @@
         <label class="reason-option"><input type="radio" name="reportReason" value="Other"/> Other</label>
       </div>
       <div class="form-group">
-        <label class="form-label">Additional Details</label>
+        <label class="form-label">Additional Details (optional)</label>
         <textarea class="form-textarea" id="reportDetails" placeholder="Describe the issue..." rows="3"></textarea>
       </div>
     </div>
@@ -93,7 +96,6 @@
 </div>
 
 <div id="toast-container"></div>
-
 <script src="/js/app.js"></script>
 <script>
 let currentReportUserId = null;
@@ -106,8 +108,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function searchStudents() {
-  const skills = document.getElementById('filterSkills').value.trim();
-  const interests = document.getElementById('filterInterests').value.trim();
+  const skills       = document.getElementById('filterSkills').value.trim();
+  const interests    = document.getElementById('filterInterests').value.trim();
   const availability = document.getElementById('filterAvailability').value;
 
   const params = new URLSearchParams();
@@ -116,7 +118,9 @@ async function searchStudents() {
   if (availability) params.set('availability', availability);
 
   const resultsEl = document.getElementById('searchResults');
-  resultsEl.innerHTML = `<div class="loading-overlay"><div class="spinner"></div> Searching...</div>`;
+  const countEl   = document.getElementById('resultsCount');
+  resultsEl.innerHTML = `<div class="loading-overlay"><div class="spinner"></div><span>Searching...</span></div>`;
+  countEl.textContent = '';
 
   const [searchRes, outReqRes, connRes] = await Promise.all([
     apiRequest(`/api/match/search?${params}`),
@@ -129,60 +133,85 @@ async function searchStudents() {
     return;
   }
 
-  const students = searchRes.students;
-  const sentIds = new Set((outReqRes.requests || []).map(r => r.receiver_id));
-  const connIds = new Set((connRes.connections || []).map(c => c.id));
+  const students = searchRes.students || [];
+  // Build sets from string IDs for comparison
+  const sentIds = new Set((outReqRes.requests || []).map(r => String(r.receiver_id)));
+  const connIds = new Set((connRes.connections || []).map(c => String(c._id)));
+
+  countEl.textContent = students.length
+    ? `${students.length} student${students.length !== 1 ? 's' : ''} found`
+    : '';
 
   if (!students.length) {
-    resultsEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">😕</div><div class="empty-state-title">No students found</div><div class="empty-state-text">Try different filters or check back later.</div></div>`;
+    resultsEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">&#128270;</div>
+        <div class="empty-state-title">No students found</div>
+        <p style="font-size:0.84rem;color:var(--text-muted)">Try different filters or broaden your search.</p>
+      </div>`;
     return;
   }
 
-  resultsEl.innerHTML = `
-    <div style="margin-bottom:1rem;color:var(--text-muted);font-size:0.85rem;font-weight:500">${students.length} student${students.length !== 1 ? 's' : ''} found</div>
-    <div class="grid-3">
-      ${students.map(s => {
-        const isConnected = connIds.has(s.id);
-        const isSent = sentIds.has(s.id);
-        let actionBtn = '';
-        if (isConnected) {
-          actionBtn = `<a href="/pages/chat.html?partner=${s.id}" class="btn btn-success btn-sm">💬 Chat</a>`;
-        } else if (isSent) {
-          actionBtn = `<button class="btn btn-secondary btn-sm" disabled>✓ Requested</button>`;
-        } else {
-          actionBtn = `<button class="btn btn-primary btn-sm" onclick="sendRequest(${s.id}, this)">🤝 Connect</button>`;
-        }
-        return `
-          <div class="student-card">
-            <div class="student-card-header">
-              <div class="student-avatar">${getInitials(s.name)}</div>
-              <div>
-                <div class="student-name">${s.name}</div>
-                <div class="student-college">📍 ${s.college_name}</div>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Skills</div>
-              <div class="tags">${renderSkillTags(s.skills, 5)}</div>
-            </div>
-            ${s.interests ? `<div><div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Interests</div><div class="tags">${renderSkillTags(s.interests, 3)}</div></div>` : ''}
-            <div class="flex-between" style="margin-top:auto;padding-top:0.75rem;border-top:1px solid var(--border)">
-              ${renderAvailability(s.availability)}
-              <div style="display:flex;gap:6px;align-items:center">
-                <button class="btn btn-secondary btn-sm" title="Report user" onclick="openReportModal(${s.id},'${s.name.replace(/'/g,"\\'")}')">🚩</button>
-                ${actionBtn}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+  resultsEl.innerHTML = `<div class="cards-grid">${students.map(s => buildCard(s, sentIds, connIds)).join('')}</div>`;
+}
+
+function buildCard(s, sentIds, connIds) {
+  const sid = String(s._id);
+  const isConnected = connIds.has(sid);
+  const isSent      = sentIds.has(sid);
+
+  let connectBtn = '';
+  if (isConnected) {
+    connectBtn = `<a href="/pages/chat.html?partner=${sid}" class="btn btn-success btn-sm">Message</a>`;
+  } else if (isSent) {
+    connectBtn = `<button class="btn btn-secondary btn-sm" disabled>Request Sent</button>`;
+  } else {
+    connectBtn = `<button class="btn btn-primary btn-sm" data-user-id="${sid}" onclick="sendRequest('${sid}', this)">Connect</button>`;
+  }
+
+  return `
+    <div class="user-card">
+      <!-- HEADER -->
+      <div class="user-card-header">
+        <div class="user-card-avatar">${getInitials(s.name)}</div>
+        <div style="min-width:0">
+          <div class="user-card-name">${s.name}</div>
+          <div class="user-card-college">${s.college_name}</div>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="user-card-body">
+        <!-- Skills -->
+        <div>
+          <div class="card-section-label">Skills</div>
+          <div class="tags">${renderSkillTags(s.skills, 5)}</div>
+        </div>
+
+        <!-- Interests -->
+        <div>
+          <div class="card-section-label">Interests</div>
+          <div class="tags">${renderInterestTags(s.interests, 3)}</div>
+        </div>
+
+        <!-- Availability -->
+        <div>
+          <div class="card-section-label">Availability</div>
+          ${renderAvailability(s.availability)}
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="user-card-footer">
+        <button class="btn btn-danger-outline btn-sm" onclick="openReportModal('${sid}', '${s.name.replace(/'/g, "\\'")}')">Report</button>
+        ${connectBtn}
+      </div>
+    </div>`;
 }
 
 function clearFilters() {
-  document.getElementById('filterSkills').value = '';
-  document.getElementById('filterInterests').value = '';
+  document.getElementById('filterSkills').value     = '';
+  document.getElementById('filterInterests').value  = '';
   document.getElementById('filterAvailability').value = '';
   searchStudents();
 }
@@ -190,17 +219,19 @@ function clearFilters() {
 async function sendRequest(receiverId, btn) {
   btn.disabled = true;
   btn.textContent = 'Sending...';
+
   const res = await apiRequest('/api/match/request', {
     method: 'POST',
     body: JSON.stringify({ receiver_id: receiverId })
   });
+
   showToast(res.message, res.success ? 'success' : 'error');
   if (res.success) {
-    btn.textContent = '✓ Requested';
+    btn.textContent = 'Request Sent';
     btn.classList.replace('btn-primary', 'btn-secondary');
   } else {
     btn.disabled = false;
-    btn.textContent = '🤝 Connect';
+    btn.textContent = 'Connect';
   }
 }
 
@@ -215,7 +246,7 @@ function openReportModal(userId, userName) {
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
 async function submitReport() {
-  const reason = document.querySelector('input[name="reportReason"]:checked')?.value;
+  const reason  = document.querySelector('input[name="reportReason"]:checked')?.value;
   const details = document.getElementById('reportDetails').value.trim();
   if (!reason) { showToast('Please select a reason', 'warning'); return; }
 
@@ -227,7 +258,7 @@ async function submitReport() {
   if (res.success) closeModal('reportModal');
 }
 
-document.getElementById('reportModal').addEventListener('click', (e) => {
+document.getElementById('reportModal').addEventListener('click', e => {
   if (e.target === document.getElementById('reportModal')) closeModal('reportModal');
 });
 </script>
