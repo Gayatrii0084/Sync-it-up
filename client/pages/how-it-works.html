@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>How It Works – SyncItUp</title>
+  <meta name="description" content="Learn how SyncItUp helps you find the perfect hackathon teammate in 5 simple steps."/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    body { background: var(--bg); }
+
+    /* Page header */
+    .page-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #2563eb 100%);
+      color: white; padding: 5rem 0 4rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .page-header::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 50%, rgba(167,139,250,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .page-header-label {
+      display: inline-block;
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px; color: #93c5fd;
+      background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
+      padding: 4px 14px; border-radius: 100px; margin-bottom: 1rem;
+    }
+    .page-header h1 { font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 900; margin-bottom: 0.85rem; letter-spacing: -0.5px; }
+    .page-header p { font-size: 1rem; color: rgba(255,255,255,0.72); max-width: 520px; margin: 0 auto; line-height: 1.75; }
+
+    /* Steps section */
+    .steps-section { padding: 5rem 0 4rem; }
+    .steps-intro { text-align: center; margin-bottom: 3.5rem; }
+
+    /* Vertical timeline steps */
+    .step-timeline { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 0; }
+
+    .step-item {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 0 1.75rem;
+      position: relative;
+    }
+    /* Connecting vertical line between steps */
+    .step-item:not(:last-child) .step-connector {
+      position: absolute;
+      left: 38px; top: 72px; bottom: -28px;
+      width: 2px;
+      background: linear-gradient(to bottom, #2563eb, rgba(37,99,235,0.15));
+    }
+
+    .step-left { display: flex; flex-direction: column; align-items: center; padding-top: 4px; }
+    .step-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: white; font-size: 1.15rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 20px rgba(37,99,235,0.40);
+      flex-shrink: 0; position: relative; z-index: 1;
+    }
+
+    .step-body {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2rem;
+      transition: all 0.2s;
+    }
+    .step-body:hover { border-color: var(--primary-border); box-shadow: 0 8px 24px rgba(37,99,235,0.09); transform: translateX(4px); }
+
+    .step-tag {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--primary);
+      background: var(--primary-pale); padding: 2px 10px; border-radius: 100px;
+      display: inline-block; margin-bottom: 0.6rem;
+    }
+    .step-title { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem; }
+    .step-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+    .step-tips { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 6px; }
+    .step-tip {
+      font-size: 0.74rem; font-weight: 600; padding: 3px 10px; border-radius: 100px;
+      background: var(--primary-pale); color: var(--primary-dark);
+      border: 1px solid var(--primary-border);
+    }
+
+    /* FAQ / notes strip */
+    .notes-section { padding: 3.5rem 0 4rem; background: var(--surface); border-top: 1px solid var(--border); }
+    .notes-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem; margin-top: 2rem; }
+    .note-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.4rem; }
+    .note-title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; }
+    .note-text  { font-size: 0.82rem; color: var(--text-muted); line-height: 1.65; }
+
+    /* CTA */
+    .hiw-cta { padding: 4rem 0; text-align: center; }
+    .hiw-cta h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-primary); }
+    .hiw-cta p { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+    @media (max-width: 640px) {
+      .step-item { grid-template-columns: 56px 1fr; gap: 0 1rem; }
+      .step-circle { width: 44px; height: 44px; font-size: 1rem; }
+      .step-item:not(:last-child) .step-connector { left: 28px; top: 56px; }
+      .notes-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-logo" href="/">Sync<span>It</span>Up</a>
+  <div class="nav-toggle"><span></span><span></span><span></span></div>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/pages/features.html">Features</a>
+    <a href="/pages/how-it-works.html" class="active">How It Works</a>
+    <a href="/pages/match.html">Find Teammates</a>
+    <a href="/pages/login.html">Login</a>
+    <a href="/pages/signup.html">Sign Up</a>
+  </div>
+  <div class="nav-actions">
+    <a href="/pages/login.html" class="btn btn-outline btn-sm">Login</a>
+    <a href="/pages/signup.html" class="btn btn-primary btn-sm">Get Started</a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<section class="page-header">
+  <div class="container" style="position:relative;z-index:1;">
+    <span class="page-header-label">The Process</span>
+    <h1>Get Started in 5 Simple Steps</h1>
+    <p>From creating your account to building your first hackathon team — here's exactly how SyncItUp works.</p>
+  </div>
+</section>
+
+<!-- STEPS TIMELINE -->
+<section class="steps-section">
+  <div class="container">
+    <div class="step-timeline">
+
+      <!-- Step 1 -->
+      <div class="step-item">
+        <div class="step-connector"></div>
+        <div class="step-left">
+          <div class="step-circle">1</div>
+        </div>
+        <div class="step-body">
+          <span class="step-tag">Getting Started</span>
+          <div class="step-title">Create Your Account</div>
+          <p class="step-desc">Sign up using your college email address. Enter your name, password, and college name. A one-time password (OTP) will be sent to your email to verify your identity before your account is activated.</p>
+          <div class="step-tips">
+            <span class="step-tip">OTP Verification</span>
+            <span class="step-tip">College Email</span>
+            <span class="step-tip">Secure Signup</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-item">
+        <div class="step-connector"></div>
+        <div class="step-left">
+          <div class="step-circle">2</div>
+        </div>
+        <div class="step-body">
+          <span class="step-tag">Your Profile</span>
+          <div class="step-title">Build Your Profile with Skills &amp; Interests</div>
+          <p class="step-desc">After signing up, complete your profile by listing the skills you bring to a team. Add your interests, availability (full-time, part-time, weekends), and a short bio so others know who you are and what you're looking for.</p>
+          <div class="step-tips">
+            <span class="step-tip">AI / ML</span>
+            <span class="step-tip">Web Development</span>
+            <span class="step-tip">IoT</span>
+            <span class="step-tip">UI / UX</span>
+            <span class="step-tip">Mobile</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-item">
+        <div class="step-connector"></div>
+        <div class="step-left">
+          <div class="step-circle">3</div>
+        </div>
+        <div class="step-body">
+          <span class="step-tag">Discovery</span>
+          <div class="step-title">Browse Students from Your College</div>
+          <p class="step-desc">Head to the <strong>Find Teammates</strong> page. All profiles shown are from students in your own college — making collaboration natural and trustworthy. Use the skill and domain filters to narrow your search and find the exact kind of teammate you need.</p>
+          <div class="step-tips">
+            <span class="step-tip">College Filter</span>
+            <span class="step-tip">Skill Filter</span>
+            <span class="step-tip">Domain Filter</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-item">
+        <div class="step-connector"></div>
+        <div class="step-left">
+          <div class="step-circle">4</div>
+        </div>
+        <div class="step-body">
+          <span class="step-tag">Connection</span>
+          <div class="step-title">Send a Collaboration Request</div>
+          <p class="step-desc">Found someone with the right skills? Send them a collaboration request in one click. They'll receive a notification and can accept or decline. Once accepted, you're officially connected and can begin chatting immediately.</p>
+          <div class="step-tips">
+            <span class="step-tip">One-Click Request</span>
+            <span class="step-tip">Accept / Decline</span>
+            <span class="step-tip">Instant Notifications</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step-item">
+        <div class="step-left">
+          <div class="step-circle">5</div>
+        </div>
+        <div class="step-body">
+          <span class="step-tag">Collaboration</span>
+          <div class="step-title">Start Collaborating &amp; Win Together</div>
+          <p class="step-desc">With your team formed, use the built-in real-time chat to discuss ideas, divide tasks, and plan your hackathon strategy. Your messages are private and stored securely. Now go build something amazing and win that hackathon.</p>
+          <div class="step-tips">
+            <span class="step-tip">Private Chat</span>
+            <span class="step-tip">Real-Time Messaging</span>
+            <span class="step-tip">Secure History</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- NOTES STRIP -->
+<section class="notes-section">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:0.25rem;">
+      <span style="display:inline-block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--primary);background:var(--primary-pale);padding:4px 12px;border-radius:100px;margin-bottom:0.75rem;">Good to Know</span>
+      <h2 style="font-size:1.45rem;font-weight:800;color:var(--text-primary);">Frequently Asked Questions</h2>
+    </div>
+    <div class="notes-grid">
+      <div class="note-card">
+        <div class="note-title">Is SyncItUp free to use?</div>
+        <p class="note-text">Yes, completely free for all college students. No subscription or hidden fees. Sign up and start connecting right away.</p>
+      </div>
+      <div class="note-card">
+        <div class="note-title">Can I connect with students from other colleges?</div>
+        <p class="note-text">Currently, the platform focuses on college-scoped connections to maintain trust. Students from your college appear in your feed.</p>
+      </div>
+      <div class="note-card">
+        <div class="note-title">What if I receive an inappropriate request?</div>
+        <p class="note-text">You can report users directly. College admins review reports and take action to keep the community safe and professional.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="hiw-cta">
+  <div class="container">
+    <h2>Ready to Find Your Team?</h2>
+    <p>It only takes 2 minutes to create your profile and start connecting.</p>
+    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+      <a href="/pages/signup.html" class="btn btn-primary" style="padding:12px 28px;font-size:0.95rem;">Create Your Account</a>
+      <a href="/pages/features.html" class="btn btn-outline" style="padding:12px 28px;font-size:0.95rem;">Explore Features</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="background:#0f172a;color:rgba(255,255,255,0.45);padding:1.5rem;text-align:center;font-size:0.8rem;">
+  <p>© 2025 <strong style="color:rgba(255,255,255,0.75)">SyncItUp</strong> &nbsp;|&nbsp;
+    <a href="/pages/features.html" style="color:#60a5fa;">Features</a> &nbsp;|&nbsp;
+    <a href="/pages/how-it-works.html" style="color:#60a5fa;">How It Works</a> &nbsp;|&nbsp;
+    <a href="/pages/login.html" style="color:#60a5fa;">Login</a>
+  </p>
+</footer>
+
+<script src="/js/config.js"></script><script src="/js/app.js"></script>
+</body>
+</html>

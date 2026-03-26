@@ -2,10 +2,13 @@
    SyncItUp – Shared Frontend Utilities
    ────────────────────────────────────────────────────────────────── */
 
+// ─── API BASE URL (set in client/js/config.js) ────────────────────
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '';
+
 // ─── API HELPER ───────────────────────────────────────────────────
 async function apiRequest(url, options = {}) {
   try {
-    const res = await fetch(url, {
+    const res = await fetch(API_BASE + url, {
       headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
       credentials: 'include',
       ...options

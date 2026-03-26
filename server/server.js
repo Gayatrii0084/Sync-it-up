@@ -1,5 +1,6 @@
 const express = require('express');
-const path = require('path');
+const path    = require('path');
+const cors    = require('cors');
 const session = require('express-session');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
@@ -9,22 +10,46 @@ const matchRoutes = require('./routes/match');
 const chatRoutes  = require('./routes/chat');
 const adminRoutes = require('./routes/admin');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
+const isProd = process.env.NODE_ENV === 'production';
+
+// ─── TRUST PROXY (required for Render / Heroku reverse proxy) ──────
+if (isProd) app.set('trust proxy', 1);
+
+// ─── CORS ──────────────────────────────────────────────────────────
+// For unified deployment (frontend + backend on same Render URL),
+// the origin is the same so CORS isn't strictly needed.
+// ALLOWED_ORIGIN env var lets you add a separate frontend URL later.
+const allowedOrigins = [
+  process.env.ALLOWED_ORIGIN,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow requests with no origin (server-to-server, Postman, same-origin)
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+}));
 
 // ─── MIDDLEWARE ────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'syncitup_fallback_secret',
+  secret: process.env.SESSION_SECRET || 'syncitup_fallback_secret_change_in_prod',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,    // set true in production with HTTPS
+    secure: isProd,        // HTTPS in production (Render provides HTTPS)
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000  // 24 hours
-  }
+    sameSite: isProd ? 'none' : 'lax',  // 'none' needed for cross-site if ever separated
+    maxAge: 24 * 60 * 60 * 1000,        // 24 hours
+  },
 }));
 
 // ─── STATIC FILES ─────────────────────────────────────────────────
@@ -55,6 +80,7 @@ async function startServer() {
     await connectDB();
     app.listen(PORT, () => {
       console.log(`\n🚀 SyncItUp running at http://localhost:${PORT}`);
+      console.log(`🌍 Environment: ${isProd ? 'production' : 'development'}`);
       console.log(`📌 To make an admin: db.users.updateOne({email:'you@x.com'},{$set:{role:'admin'}})`);
     });
   } catch (err) {
@@ -64,3 +90,4 @@ async function startServer() {
 }
 
 startServer();
+
