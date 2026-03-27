@@ -45,12 +45,7 @@ router.post('/create', isAuthenticated, isStudent, async (req, res) => {
   }
 
   try {
-    // Prevent duplicate membership
-    const existing = await getMyTeam(userId);
-    if (existing) {
-      return res.json({ success: false, message: 'You are already in a team. Leave it first.' });
-    }
-
+    // Multiple teams allowed — no duplicate check needed
     const team = await Team.create({
       name:         name.trim(),
       leader_id:    userId,
@@ -70,27 +65,28 @@ router.post('/create', isAuthenticated, isStudent, async (req, res) => {
 
 // ─── GET MY TEAM ──────────────────────────────────────────────────
 // GET /api/team/my-team
+// Returns ALL teams where user is leader or member (array).
 router.get('/my-team', isAuthenticated, isStudent, async (req, res) => {
   const userId = req.session.user.id;
   try {
-    const team = await Team.findOne({
+    const teams = await Team.find({
       $or: [{ leader_id: userId }, { members: userId }]
     })
       .populate('leader_id', 'name email')
       .populate('members',   'name email skills availability')
       .lean();
 
-    if (!team) return res.json({ success: true, team: null });
+    const result = teams.map(team => ({
+      ...team,
+      _id:       team._id.toString(),
+      leader_id: { ...team.leader_id, _id: team.leader_id._id.toString() },
+      members:   team.members.map(m => ({ ...m, _id: m._id.toString() })),
+    }));
 
-    // stringify ObjectIds for safe frontend use
-    team._id       = team._id.toString();
-    team.leader_id = { ...team.leader_id, _id: team.leader_id._id.toString() };
-    team.members   = team.members.map(m => ({ ...m, _id: m._id.toString() }));
-
-    res.json({ success: true, team });
+    res.json({ success: true, teams: result });
   } catch (err) {
     console.error('My team error:', err);
-    res.json({ success: false, message: 'Failed to fetch team.' });
+    res.json({ success: false, message: 'Failed to fetch teams.' });
   }
 });
 
@@ -104,9 +100,6 @@ router.post('/join', isAuthenticated, isStudent, async (req, res) => {
   if (!isValidId(team_id)) return res.json({ success: false, message: 'Invalid team ID.' });
 
   try {
-    const existing = await getMyTeam(userId);
-    if (existing) return res.json({ success: false, message: 'You are already in a team.' });
-
     const team = await Team.findById(team_id);
     if (!team) return res.json({ success: false, message: 'Team not found.' });
 
@@ -116,6 +109,11 @@ router.post('/join', isAuthenticated, isStudent, async (req, res) => {
 
     if (team.members.length >= team.team_size) {
       return res.json({ success: false, message: 'Team is already full.' });
+    }
+
+    // Prevent joining the SAME team twice
+    if (team.members.map(String).includes(userId)) {
+      return res.json({ success: false, message: 'You are already a member of this team.' });
     }
 
     team.members.push(userId);
@@ -131,16 +129,21 @@ router.post('/join', isAuthenticated, isStudent, async (req, res) => {
 // ─── INVITE MEMBER BY EMAIL ───────────────────────────────────────
 // POST /api/team/invite
 router.post('/invite', isAuthenticated, isStudent, async (req, res) => {
-  const { email } = req.body;
+  const { email, team_id } = req.body;  // team_id added to target a specific team
   const userId  = req.session.user.id;
   const college = req.session.user.college_name;
 
   if (!email) return res.json({ success: false, message: 'Email is required.' });
 
   try {
-    // Only leader can invite
-    const team = await Team.findOne({ leader_id: userId });
-    if (!team) return res.json({ success: false, message: 'You are not a team leader.' });
+    // Find the specific team by ID if provided, else first team where user is leader
+    let team;
+    if (team_id && isValidId(team_id)) {
+      team = await Team.findOne({ _id: team_id, leader_id: userId });
+    } else {
+      team = await Team.findOne({ leader_id: userId });
+    }
+    if (!team) return res.json({ success: false, message: 'Team not found or you are not the leader.' });
 
     if (team.members.length >= team.team_size) {
       return res.json({ success: false, message: 'Team is already full.' });
@@ -150,13 +153,9 @@ router.post('/invite', isAuthenticated, isStudent, async (req, res) => {
     const target = await User.findOne({ email: email.toLowerCase(), college_name: college, role: 'student', is_blocked: false });
     if (!target) return res.json({ success: false, message: 'User not found in your college.' });
 
-    // Check not already in a team
-    const targetInTeam = await getMyTeam(target._id.toString());
-    if (targetInTeam) return res.json({ success: false, message: 'This user is already in a team.' });
-
-    // Check not already member
+    // Check not already member of THIS team specifically
     if (team.members.map(String).includes(target._id.toString())) {
-      return res.json({ success: false, message: 'User is already in your team.' });
+      return res.json({ success: false, message: 'User is already in this team.' });
     }
 
     team.members.push(target._id);
@@ -171,16 +170,24 @@ router.post('/invite', isAuthenticated, isStudent, async (req, res) => {
 
 // ─── LEAVE TEAM ───────────────────────────────────────────────────
 // POST /api/team/leave
+// Body: { team_id } — required since user can now be in multiple teams
 router.post('/leave', isAuthenticated, isStudent, async (req, res) => {
+  const { team_id } = req.body;
   const userId = req.session.user.id;
+
+  if (!isValidId(team_id)) {
+    return res.json({ success: false, message: 'team_id is required.' });
+  }
+
   try {
     const team = await Team.findOne({
+      _id: team_id,
       $or: [{ leader_id: userId }, { members: userId }]
     });
-    if (!team) return res.json({ success: false, message: 'You are not in a team.' });
+    if (!team) return res.json({ success: false, message: 'Team not found or you are not a member.' });
 
     if (team.leader_id.toString() === userId) {
-      // Leader disbands the team
+      // Leader disbands this specific team
       await Team.findByIdAndDelete(team._id);
       return res.json({ success: true, message: 'Team disbanded.' });
     }

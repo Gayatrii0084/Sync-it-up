@@ -22,7 +22,7 @@ Express serves the `client/` folder as static files alongside the API — no sep
 2. Create a **free M0 cluster** (any region)
 3. In **Database Access** → Add user → set username + password
 4. In **Network Access** → Add IP: `0.0.0.0/0` (allow all — needed for Render)
-5. Click **Connect** → **Compass / Drivers** → copy the connection string:
+5. Click **Connect** → **Drivers** → copy the connection string:
    ```
    mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/syncitup?retryWrites=true&w=majority
    ```
@@ -40,15 +40,14 @@ Express serves the `client/` folder as static files alongside the API — no sep
 ## Step 3 – Push Code to GitHub
 
 ```bash
-git init
 git add .
-git commit -m "Initial commit"
+git commit -m "Add group matching and invite code features"
 git branch -M main
 git remote add origin https://github.com/YOUR_USERNAME/syncitup.git
 git push -u origin main
 ```
 
-> Make sure `.env` is in `.gitignore` (it is already).
+> Make sure `.env` is in `.gitignore` (it already is).
 
 ---
 
@@ -57,35 +56,33 @@ git push -u origin main
 1. Go to [render.com](https://render.com) → Sign in with GitHub
 2. Click **New** → **Web Service**
 3. Connect your GitHub repo
-4. Configure the service:
+4. Configure:
 
 | Setting | Value |
 |---|---|
-| **Name** | `syncitup` |
 | **Environment** | `Node` |
 | **Build Command** | `npm install` |
 | **Start Command** | `npm start` |
 | **Instance Type** | Free |
 
-5. Under **Environment Variables**, add all of the following:
+5. Add **Environment Variables**:
 
 | Key | Value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `PORT` | `3000` |
-| `MONGO_URI` | *(your MongoDB Atlas connection string)* |
-| `SESSION_SECRET` | *(generate: any long random string)* |
+| `MONGO_URI` | *(MongoDB Atlas connection string)* |
+| `SESSION_SECRET` | *(any long random string)* |
 | `EMAIL_USER` | *(your Gmail address)* |
 | `EMAIL_PASS` | *(your Gmail App Password)* |
 | `ALLOWED_ORIGIN` | *(your Render URL, e.g. `https://syncitup.onrender.com`)* |
 
-6. Click **Deploy**. Wait 2-3 minutes for the first build to complete.
+6. Click **Deploy** — wait 2–3 minutes.
 
 ---
 
 ## Step 5 – Create Your First Admin
 
-After deployment, open the Render shell or MongoDB Atlas Data Explorer and run:
+In MongoDB Atlas → **Data Explorer** → `syncitup` → `users` collection, run:
 
 ```js
 db.users.updateOne({ email: 'your@email.com' }, { $set: { role: 'admin' } })
@@ -93,25 +90,49 @@ db.users.updateOne({ email: 'your@email.com' }, { $set: { role: 'admin' } })
 
 ---
 
-## Step 6 – Verify Deployment
+## Step 6 – Create First Invite Code ⚠️ REQUIRED
 
-Open your Render URL (e.g. `https://syncitup.onrender.com`) and check:
+New users **cannot register** without an invite code. Do this right after deployment.
 
-- [ ] Home page loads with hero section
-- [ ] Features and How It Works pages load
-- [ ] Sign Up form works and sends OTP email
-- [ ] Login works
-- [ ] Find Teammates page shows students
-- [ ] Chat works between connected users
+1. Log in as admin on your live site
+2. Open browser DevTools → **Console** and run:
+
+```javascript
+fetch('/api/admin/invite/create', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    custom_code: 'SYNCITUP2024',
+    usage_limit: 100,
+    expires_in_days: 365
+  })
+}).then(r => r.json()).then(console.log);
+```
+
+3. Share `SYNCITUP2024` with students for registration.
 
 ---
 
-## Making Changes After Deployment
+## Step 7 – Verify Deployment
 
-Render auto-deploys on every push to your `main` branch:
+- [ ] Home page loads
+- [ ] Sign Up with invite code → OTP email sent → account created
+- [ ] Login works
+- [ ] Find Teammates (`/pages/match.html`) shows students
+- [ ] 1-to-1 chat works
+- [ ] Teams page (`/pages/team.html`) — create multiple teams
+- [ ] Team match + group chat works after match accepted
+- [ ] Admin invite codes manageable via console API
+
+---
+
+## Updating After Deployment
+
+Render auto-deploys on every push to `main`:
+
 ```bash
 git add .
-git commit -m "Your change"
+git commit -m "describe your change"
 git push
 ```
 
@@ -120,14 +141,8 @@ git push
 ## Local Development
 
 ```bash
-# 1. Copy env template
-cp .env.example .env
-# Edit .env with your real values
-
-# 2. Start dev server
-npm run dev
-
-# 3. Open http://localhost:3000
+cp .env.example .env   # fill in your values
+npm run dev            # starts on http://localhost:3000
 ```
 
-> **Note:** Render free tier spins down after 15 minutes of inactivity. First load after idle will take ~30 seconds to start.
+> **Note:** Render free tier sleeps after 15 min idle. First request after sleep takes ~30s.
