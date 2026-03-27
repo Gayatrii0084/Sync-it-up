@@ -56,8 +56,8 @@ async function loadConversations() {
 
   sidebar.innerHTML = res.conversations.map(c => `
     <div class="chat-contact ${c.id === currentPartnerId ? 'active' : ''}"
-         onclick="openConversation(${c.id})" id="contact-${c.id}">
-      <div class="student-avatar" style="width:44px;height:44px;font-size:0.9rem">${getInitials(c.name)}</div>
+onclick="openConversation('${c.id}')" id="contact-${c.id}">    
+  <div class="student-avatar" style="width:44px;height:44px;font-size:0.9rem">${getInitials(c.name)}</div>
       <div style="flex:1;min-width:0">
         <div class="chat-contact-name">${c.name}</div>
         <div class="chat-contact-preview">${c.last_message || 'Say hello!'}</div>
@@ -114,23 +114,34 @@ async function loadMessages(partnerId, fullLoad = false) {
   // Build messages
   if (fullLoad) {
     container.innerHTML = '';
-    lastMessageId = 0;
+    lastMessageId = null;
   }
 
-  const newMessages = res.messages.filter(m => m.id > lastMessageId);
+  const newMessages = res.messages.filter(
+    m => !lastMessageId || m._id > lastMessageId
+  );
+
   if (newMessages.length === 0) return;
 
   newMessages.forEach(msg => {
+
     const isMine = msg.sender_id === myId;
+
     const div = document.createElement('div');
     div.className = `message ${isMine ? 'sent' : 'received'}`;
+
     div.innerHTML = `
-      <div class="message-bubble">${escapeHtml(msg.message)}</div>
-      <span class="message-time">${formatDateTime(msg.timestamp)}</span>
-    `;
+    <div class="message-bubble">${escapeHtml(msg.message)}</div>
+    <span class="message-time">${formatDateTime(msg.timestamp)}</span>
+  `;
+
     container.appendChild(div);
-    if (msg.id > lastMessageId) lastMessageId = msg.id;
+
+    lastMessageId = msg._id;
+
   });
+
+  container.scrollTop = container.scrollHeight;
 
   container.scrollTop = container.scrollHeight;
 }
