@@ -40,16 +40,20 @@ router.post('/send-otp', async (req, res) => {
     req.session.pendingUser = { name, email: email.toLowerCase(), password, college_name, skills, interests, availability };
 
     let emailNote = '';
-    try {
-      await sendOTPEmail(email, otp);
-    } catch (emailErr) {
-      console.error('⚠️  Email send failed (OTP printed to console above):', emailErr.message);
-      emailNote = ' (Email delivery failed – check server console for OTP)';
-    }
-    res.json({ success: true, message: `OTP sent${emailNote}.` });
+
+    /// send email in background (do NOT wait)
+    sendOTPEmail(email, otp).catch(emailErr => {
+      console.error('⚠️ Email send failed:', emailErr.message);
+    });
+
+    return res.json({
+      success: true,
+      message: 'OTP generated'
+    });
+
   } catch (err) {
     console.error('Send OTP error:', err);
-    res.json({ success: false, message: 'Failed to generate OTP. Please try again.' });
+    return res.json({ success: false, message: 'Failed to generate OTP.' });
   }
 });
 
