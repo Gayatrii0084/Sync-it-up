@@ -26,8 +26,16 @@ router.post('/send-otp', async (req, res) => {
     await OTP.deleteMany({ email: email.toLowerCase() });
 
     const otp = generateOTP();
+
+    console.log("OTP for", email, "is:", otp);   // ADD THIS LINE
+
     const expiry = getExpiryTime();
-    await OTP.create({ email: email.toLowerCase(), otp, expiry_time: expiry });
+
+    await OTP.create({
+      email: email.toLowerCase(),
+      otp,
+      expiry_time: expiry
+    });
 
     req.session.pendingUser = { name, email: email.toLowerCase(), password, college_name, skills, interests, availability };
 
