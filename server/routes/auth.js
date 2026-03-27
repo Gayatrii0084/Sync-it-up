@@ -1,18 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const { User, OTP } = require('../config/db');
+const { User, OTP, InviteCode } = require('../config/db');
 const { generateOTP, getExpiryTime } = require('../utils/otpGenerator');
 const { sendOTPEmail } = require('../utils/emailService');
 const { isAuthenticated } = require('../middleware/authMiddleware');
 
 // ─── SEND OTP ─────────────────────────────────────────────────────
 router.post('/send-otp', async (req, res) => {
-  const { name, email, password, college_name, skills, interests, availability } = req.body;
+  const { name, email, password, college_name, skills, interests, availability, invite_code } = req.body;
 
   if (!name || !email || !password || !college_name) {
     return res.json({ success: false, message: 'All required fields must be filled.' });
   }
+
+  // ─── INVITE CODE VALIDATION (NEW) ──────────────────────────────
+  if (!invite_code || !invite_code.trim()) {
+    return res.json({ success: false, message: 'Invite code is required.' });
+  }
+
+  const inviteDoc = await InviteCode.findOne({ code: invite_code.trim().toUpperCase(), active: true });
+  if (!inviteDoc) {
+    return res.json({ success: false, message: 'Invalid or inactive invite code.' });
+  }
+  if (new Date() > new Date(inviteDoc.expires_at)) {
+    return res.json({ success: false, message: 'Invite code has expired.' });
+  }
+  if (inviteDoc.used_count >= inviteDoc.usage_limit) {
+    return res.json({ success: false, message: 'Invite code usage limit reached.' });
+  }
+  // Store invite code id in session so verify-otp can increment the counter
+  req.session.pendingInviteId = inviteDoc._id.toString();
+  // ─── END INVITE CODE VALIDATION ─────────────────────────────────
 
   const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_\-+=])[A-Za-z\d@$!%*?&#^()_\-+=]{8,}$/;
   if (!pwdRegex.test(password)) {
@@ -108,6 +127,15 @@ router.post('/verify-otp', async (req, res) => {
 
     await OTP.deleteMany({ email: email.toLowerCase() });
     delete req.session.pendingUser;
+
+    // ─── INCREMENT INVITE CODE USAGE (NEW) ──────────────────
+    if (req.session.pendingInviteId) {
+      await InviteCode.findByIdAndUpdate(
+        req.session.pendingInviteId,
+        { $inc: { used_count: 1 } }
+      );
+      delete req.session.pendingInviteId;
+    }
 
     res.json({ success: true, message: 'Account created successfully! You can now log in.' });
   } catch (err) {

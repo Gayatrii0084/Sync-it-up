@@ -5,10 +5,14 @@ const session = require('express-session');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const { connectDB } = require('./config/db');
-const authRoutes  = require('./routes/auth');
-const matchRoutes = require('./routes/match');
-const chatRoutes  = require('./routes/chat');
-const adminRoutes = require('./routes/admin');
+const authRoutes        = require('./routes/auth');
+const matchRoutes       = require('./routes/match');
+const chatRoutes        = require('./routes/chat');
+const adminRoutes       = require('./routes/admin');
+// ─── NEW ROUTES (additive only) ───────────────────────────────────
+const teamRoutes        = require('./routes/team');
+const groupChatRoutes   = require('./routes/groupChat');
+const adminInviteRoutes = require('./routes/adminInvite');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -61,10 +65,14 @@ app.get('/', (req, res) => {
 });
 
 // ─── API ROUTES ───────────────────────────────────────────────────
-app.use('/api/auth',  authRoutes);
-app.use('/api/match', matchRoutes);
-app.use('/api/chat',  chatRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/auth',         authRoutes);
+app.use('/api/match',        matchRoutes);
+app.use('/api/chat',         chatRoutes);
+app.use('/api/admin',        adminRoutes);
+// ─── NEW API ROUTES (additive) ────────────────────────────────────
+app.use('/api/team',         teamRoutes);      // team CRUD + match-request/respond/list
+app.use('/api/group-chat',   groupChatRoutes); // group chat messages
+app.use('/api/admin/invite', adminInviteRoutes); // invite code management
 
 // ─── PAGE ROUTES ──────────────────────────────────────────────────
 app.get('/pages/:page', (req, res) => {

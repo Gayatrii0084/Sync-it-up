@@ -64,6 +64,7 @@ if (signupForm) {
     const skills = document.getElementById('skills').value.trim();
     const interests = document.getElementById('interests').value.trim();
     const availability = document.getElementById('availability').value;
+    const invite_code = (document.getElementById('invite_code')?.value || '').trim().toUpperCase(); // NEW
 
     // Client-side validations
     if (password !== confirmPassword) {
@@ -82,7 +83,7 @@ if (signupForm) {
 
     const res = await apiRequest('/api/auth/send-otp', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, college_name, skills, interests, availability })
+      body: JSON.stringify({ name, email, password, college_name, skills, interests, availability, invite_code }) // invite_code added (NEW)
     });
 
     if (res.success) {

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Matching – SyncItUp</title>
+  <meta name="description" content="Create or join a team and find matching teams from your college on SyncItUp."/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    /* ── Team page extra styles (scoped, do not affect global CSS) ── */
+    .team-tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .team-tab {
+      padding:.5rem 1.2rem; border-radius:8px; font-size:.87rem; font-weight:600;
+      cursor:pointer; border:2px solid transparent; background:var(--surface,#1e293b);
+      color:var(--text-muted,#94a3b8); transition:all .18s;
+    }
+    .team-tab.active { background:var(--primary,#6366f1); color:#fff; border-color:var(--primary,#6366f1); }
+    .team-tab:hover:not(.active) { border-color:var(--primary,#6366f1); color:var(--primary,#6366f1); }
+
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* Member chips */
+    .member-chip {
+      display:inline-flex; align-items:center; gap:.4rem;
+      background:var(--surface,#1e293b); border:1px solid var(--border,#334155);
+      border-radius:999px; padding:.3rem .75rem; font-size:.82rem; font-weight:500;
+    }
+    .member-chip .chip-avatar {
+      width:22px; height:22px; border-radius:50%; background:var(--primary,#6366f1);
+      color:#fff; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:700;
+    }
+    .chip-leader { border-color:var(--primary,#6366f1); color:var(--primary,#6366f1); }
+
+    /* Group chat */
+    .gchat-box {
+      height:340px; overflow-y:auto; background:var(--bg,#0f172a);
+      border:1px solid var(--border,#334155); border-radius:10px;
+      padding:1rem; display:flex; flex-direction:column; gap:.65rem;
+    }
+    .gchat-msg { display:flex; flex-direction:column; max-width:72%; }
+    .gchat-msg.mine { align-self:flex-end; align-items:flex-end; }
+    .gchat-msg.theirs { align-self:flex-start; }
+    .gchat-bubble {
+      padding:.55rem .9rem; border-radius:14px; font-size:.875rem; line-height:1.45;
+      word-break:break-word;
+    }
+    .gchat-msg.mine .gchat-bubble { background:var(--primary,#6366f1); color:#fff; border-bottom-right-radius:4px; }
+    .gchat-msg.theirs .gchat-bubble { background:var(--surface,#1e293b); color:var(--text,#e2e8f0); border-bottom-left-radius:4px; }
+    .gchat-meta { font-size:.72rem; color:var(--text-muted,#94a3b8); margin-top:.25rem; }
+    .gchat-input-row { display:flex; gap:.5rem; margin-top:.75rem; }
+    .gchat-input { flex:1; }
+
+    /* Team suggestion card badge */
+    .size-badge {
+      display:inline-block; padding:.2rem .55rem; border-radius:6px; font-size:.72rem; font-weight:700;
+      background:rgba(99,102,241,.15); color:var(--primary,#6366f1); letter-spacing:.5px;
+    }
+
+    /* Status badge */
+    .status-badge { padding:.18rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600; }
+    .status-pending  { background:rgba(245,158,11,.15); color:#f59e0b; }
+    .status-accepted { background:rgba(16,185,129,.15); color:#10b981; }
+    .status-rejected { background:rgba(239,68,68,.15);  color:#ef4444; }
+
+    .section-title { font-size:1rem; font-weight:700; margin-bottom:.75rem; color:var(--text,#e2e8f0); }
+    .info-chip { font-size:.78rem; color:var(--text-muted,#94a3b8); }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR (identical to match.html) ───────────────────────────── -->
+<nav class="navbar">
+  <a class="nav-logo" href="/">Sync<span>It</span>Up</a>
+  <div class="nav-toggle"><span></span><span></span><span></span></div>
+  <div class="nav-links">
+    <a href="/pages/dashboard.html">Dashboard</a>
+    <a href="/pages/match.html">Find Teammates</a>
+    <a href="/pages/team.html" class="active">Teams</a>
+    <a href="/pages/chat.html">Messages</a>
+    <a href="/pages/profile.html">Profile</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-avatar" id="navAvatar" onclick="window.location='/pages/profile.html'">?</div>
+    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<main style="padding:1.5rem 0 3rem">
+  <div class="container">
+    <div class="page-header" style="padding-top:1rem">
+      <h1 class="page-title">Team Matching</h1>
+      <p class="page-subtitle">Create or join a team, then match with same-size teams from your college. Individual matching still works on the <a href="/pages/match.html" style="color:var(--primary)">Find Teammates</a> page.</p>
+    </div>
+
+    <!-- ── TABS ─────────────────────────────────────────────────── -->
+    <div class="team-tabs">
+      <button class="team-tab active" onclick="switchTab('myTeam')">My Team</button>
+      <button class="team-tab" onclick="switchTab('suggestions')">Find Teams</button>
+      <button class="team-tab" onclick="switchTab('requests')">Match Requests</button>
+      <button class="team-tab" onclick="switchTab('groupChat')">Group Chat</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         TAB 1 — MY TEAM
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-myTeam">
+      <div id="myTeamContent">
+        <div class="loading-overlay"><div class="spinner"></div><span>Loading…</span></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         TAB 2 — SUGGESTIONS
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-suggestions">
+      <div id="suggestionsContent">
+        <div class="loading-overlay"><div class="spinner"></div><span>Loading suggestions…</span></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         TAB 3 — MATCH REQUESTS
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-requests">
+      <div id="requestsContent">
+        <div class="loading-overlay"><div class="spinner"></div><span>Loading requests…</span></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         TAB 4 — GROUP CHAT
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-groupChat">
+      <div id="groupChatContent">
+        <div class="empty-state">
+          <div class="empty-state-icon">💬</div>
+          <div class="empty-state-title">No active group chat</div>
+          <p style="font-size:.84rem;color:var(--text-muted)">Accept a team match request to unlock group chat.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</main>
+
+<div id="toast-container"></div>
+
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   team.js (inline) — SyncItUp Team Matching Frontend Logic
+   All API calls go to /api/team/* and /api/group-chat/*
+   Does NOT touch /api/match, /api/chat, or auth routes.
+═══════════════════════════════════════════════════════════════════ */
+
+let currentUser   = null;
+let myTeamData    = null;
+let activeChatMatchId = null;
+let chatPollTimer = null;
+
+// ── INIT ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  currentUser = await requireAuth('student');
+  if (!currentUser) return;
+  populateNavUser(currentUser);
+  await loadMyTeam();
+});
+
+// ── TAB SWITCHER ──────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.team-tab').forEach((t, i) => {
+    const panels = ['myTeam', 'suggestions', 'requests', 'groupChat'];
+    t.classList.toggle('active', panels[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+
+  // Lazy-load panel content
+  if (name === 'suggestions') loadSuggestions();
+  if (name === 'requests')    loadRequests();
+  if (name === 'groupChat')   initGroupChat();
+
+  // Stop polling when leaving chat tab
+  if (name !== 'groupChat' && chatPollTimer) {
+    clearInterval(chatPollTimer);
+    chatPollTimer = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MY TEAM TAB
+// ═══════════════════════════════════════════════════════════════════
+async function loadMyTeam() {
+  const el = document.getElementById('myTeamContent');
+  el.innerHTML = `<div class="loading-overlay"><div class="spinner"></div><span>Loading…</span></div>`;
+
+  const res = await apiRequest('/api/team/my-team');
+  if (!res.success) { el.innerHTML = `<div class="alert alert-error">${res.message}</div>`; return; }
+
+  myTeamData = res.team;
+
+  if (!myTeamData) {
+    // No team — show create form
+    el.innerHTML = renderCreateTeamForm();
+  } else {
+    el.innerHTML = renderMyTeam(myTeamData);
+  }
+}
+
+function renderCreateTeamForm() {
+  return `
+    <div class="card" style="max-width:480px;margin:0 auto">
+      <div class="card-body">
+        <div class="section-title">Create a New Team</div>
+        <div class="form-group">
+          <label class="form-label">Team Name</label>
+          <input class="form-input" id="teamName" placeholder="e.g. Hackathon Warriors"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Team Size</label>
+          <select class="form-select" id="teamSize">
+            <option value="2">2 Members</option>
+            <option value="3">3 Members</option>
+            <option value="4">4 Members</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Team Skills <span style="font-weight:400;color:var(--text-muted)">(comma-separated)</span></label>
+          <input class="form-input" id="teamSkills" placeholder="e.g. Frontend, ML, UI"/>
+        </div>
+        <button class="btn btn-primary btn-block" id="createTeamBtn" onclick="createTeam()">Create Team</button>
+      </div>
+    </div>`;
+}
+
+function renderMyTeam(team) {
+  const isLeader = team.leader_id._id === currentUser.id;
+  const memberChips = team.members.map(m => `
+    <span class="member-chip${m._id === team.leader_id._id ? ' chip-leader' : ''}">
+      <span class="chip-avatar">${getInitials(m.name)}</span>
+      ${m.name}${m._id === team.leader_id._id ? ' 👑' : ''}
+    </span>`).join('');
+
+  const inviteSection = isLeader && team.members.length < team.team_size ? `
+    <div class="form-group" style="margin-top:1rem">
+      <label class="form-label">Invite Member by Email</label>
+      <div style="display:flex;gap:.5rem">
+        <input class="form-input" id="inviteEmail" placeholder="teammate@college.edu" style="flex:1"/>
+        <button class="btn btn-primary" onclick="inviteMember()">Invite</button>
+      </div>
+    </div>` : '';
+
+  const spotsLeft = team.team_size - team.members.length;
+
+  return `
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem">
+          <div>
+            <div class="section-title" style="margin-bottom:.25rem">${team.name}</div>
+            <div class="info-chip">
+              <span class="size-badge">${team.team_size}-member team</span>
+              &nbsp;·&nbsp; ${team.college_name}
+              &nbsp;·&nbsp; ${spotsLeft > 0 ? `${spotsLeft} spot${spotsLeft > 1 ? 's' : ''} open` : 'Team full'}
+            </div>
+          </div>
+          <button class="btn btn-danger-outline btn-sm" onclick="leaveTeam()">
+            ${isLeader ? 'Disband Team' : 'Leave Team'}
+          </button>
+        </div>
+        <div style="margin-top:1rem">
+          <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem;font-weight:600">MEMBERS (${team.members.length}/${team.team_size})</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.4rem">${memberChips}</div>
+        </div>
+        ${inviteSection}
+      </div>
+    </div>`;
+}
+
+async function createTeam() {
+  const name      = document.getElementById('teamName')?.value.trim();
+  const team_size = document.getElementById('teamSize')?.value;
+  const skills    = document.getElementById('teamSkills')?.value.trim();
+  const btn       = document.getElementById('createTeamBtn');
+
+  if (!name) { showToast('Team name is required.', 'warning'); return; }
+
+  btn.disabled = true; btn.textContent = 'Creating…';
+  const res = await apiRequest('/api/team/create', {
+    method: 'POST',
+    body: JSON.stringify({ name, team_size, skills })
+  });
+  showToast(res.message, res.success ? 'success' : 'error');
+  if (res.success) await loadMyTeam();
+  else { btn.disabled = false; btn.textContent = 'Create Team'; }
+}
+
+async function inviteMember() {
+  const email = document.getElementById('inviteEmail')?.value.trim();
+  if (!email) { showToast('Enter an email.', 'warning'); return; }
+  const res = await apiRequest('/api/team/invite', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  });
+  showToast(res.message, res.success ? 'success' : 'error');
+  if (res.success) await loadMyTeam();
+}
+
+async function leaveTeam() {
+  if (!confirm('Are you sure?')) return;
+  const res = await apiRequest('/api/team/leave', { method: 'POST' });
+  showToast(res.message, res.success ? 'success' : 'error');
+  if (res.success) { myTeamData = null; await loadMyTeam(); }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SUGGESTIONS TAB
+// ═══════════════════════════════════════════════════════════════════
+async function loadSuggestions() {
+  const el = document.getElementById('suggestionsContent');
+  el.innerHTML = `<div class="loading-overlay"><div class="spinner"></div><span>Searching…</span></div>`;
+
+  const res = await apiRequest('/api/team/suggestions');
+
+  if (!res.success) {
+    el.innerHTML = `<div class="alert alert-error">${res.message}</div>`;
+    return;
+  }
+
+  const suggestions = res.suggestions || [];
+
+  if (!suggestions.length) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-title">No matching teams found</div>
+        <p style="font-size:.84rem;color:var(--text-muted)">No same-size teams from your college are available yet.</p>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="cards-grid">${suggestions.map(t => renderSuggestionCard(t)).join('')}</div>`;
+}
+
+function renderSuggestionCard(team) {
+  const memberNames = team.members.map(m => m.name).join(', ');
+  return `
+    <div class="user-card">
+      <div class="user-card-header">
+        <div class="user-card-avatar">${team.name.charAt(0).toUpperCase()}</div>
+        <div style="min-width:0">
+          <div class="user-card-name">${team.name}</div>
+          <div class="user-card-college">${team.college_name}</div>
+        </div>
+      </div>
+      <div class="user-card-body">
+        <div>
+          <div class="card-section-label">Members (${team.members.length}/${team.team_size})</div>
+          <div style="font-size:.83rem;color:var(--text-muted)">${memberNames || '—'}</div>
+        </div>
+        ${team.skills ? `<div><div class="card-section-label">Skills</div><div class="tags">${renderSkillTags(team.skills, 5)}</div></div>` : ''}
+        <div><div class="card-section-label">Team Size</div><span class="size-badge">${team.team_size} members</span></div>
+      </div>
+      <div class="user-card-footer">
+        <button class="btn btn-primary btn-sm" onclick="sendMatchRequest('${team._id}', this)">Send Match Request</button>
+      </div>
+    </div>`;
+}
+
+async function sendMatchRequest(targetTeamId, btn) {
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const res = await apiRequest('/api/team/match-request', {
+    method: 'POST',
+    body: JSON.stringify({ target_team_id: targetTeamId })
+  });
+  showToast(res.message, res.success ? 'success' : 'error');
+  if (res.success) { btn.textContent = 'Request Sent'; btn.classList.replace('btn-primary', 'btn-secondary'); }
+  else { btn.disabled = false; btn.textContent = 'Send Match Request'; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MATCH REQUESTS TAB
+// ═══════════════════════════════════════════════════════════════════
+async function loadRequests() {
+  const el = document.getElementById('requestsContent');
+  el.innerHTML = `<div class="loading-overlay"><div class="spinner"></div><span>Loading…</span></div>`;
+
+  const res = await apiRequest('/api/team/match-list');
+  if (!res.success) { el.innerHTML = `<div class="alert alert-error">${res.message}</div>`; return; }
+
+  const matches = res.matches || [];
+  if (!matches.length) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-title">No match requests yet</div>
+        <p style="font-size:.84rem;color:var(--text-muted)">Head to "Find Teams" to send a request.</p>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1rem">${matches.map(m => renderMatchRow(m)).join('')}</div>`;
+}
+
+function renderMatchRow(m) {
+  const myTeamId  = m.myTeamId;
+  const otherTeam = m.team1_id._id === myTeamId ? m.team2_id : m.team1_id;
+  const direction = m.team1_id._id === myTeamId ? 'Sent to' : 'Received from';
+  const isReceiver = m.isReceiver;
+  const canRespond = isReceiver && m.status === 'pending';
+
+  const actions = canRespond ? `
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-success btn-sm" onclick="respondMatch('${m._id}', 'accepted')">Accept</button>
+      <button class="btn btn-danger-outline btn-sm" onclick="respondMatch('${m._id}', 'rejected')">Reject</button>
+    </div>` : `<span class="status-badge status-${m.status}">${m.status.charAt(0).toUpperCase() + m.status.slice(1)}</span>`;
+
+  // Show "Open Chat" for accepted matches
+  const chatBtn = m.status === 'accepted'
+    ? `<button class="btn btn-secondary btn-sm" onclick="openGroupChat('${m._id}')">Open Group Chat</button>`
+    : '';
+
+  return `
+    <div class="card">
+      <div class="card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:space-between">
+        <div>
+          <div style="font-size:.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;margin-bottom:.2rem">${direction}</div>
+          <div style="font-weight:700;font-size:.95rem">${otherTeam.name}</div>
+          <div class="info-chip"><span class="size-badge">${otherTeam.team_size} members</span></div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+          ${actions}
+          ${chatBtn}
+        </div>
+      </div>
+    </div>`;
+}
+
+async function respondMatch(matchId, status) {
+  const res = await apiRequest(`/api/team/match-respond/${matchId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status })
+  });
+  showToast(res.message, res.success ? 'success' : 'error');
+  if (res.success) loadRequests();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GROUP CHAT TAB
+// ═══════════════════════════════════════════════════════════════════
+async function initGroupChat() {
+  const el = document.getElementById('groupChatContent');
+
+  // Find accepted match
+  const res = await apiRequest('/api/team/match-list');
+  if (!res.success) return;
+
+  const accepted = (res.matches || []).find(m => m.status === 'accepted');
+  if (!accepted) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <div class="empty-state-title">No active group chat</div>
+        <p style="font-size:.84rem;color:var(--text-muted)">Accept a team match request to unlock group chat.</p>
+      </div>`;
+    return;
+  }
+
+  activeChatMatchId = accepted._id;
+  const otherTeam = accepted.team1_id._id === accepted.myTeamId ? accepted.team2_id : accepted.team1_id;
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-body">
+        <div class="section-title" style="margin-bottom:.5rem">Group Chat — ${accepted.team1_id.name} &amp; ${otherTeam.name}</div>
+        <div class="gchat-box" id="gchatBox"></div>
+        <div class="gchat-input-row">
+          <input class="form-input gchat-input" id="gchatInput" placeholder="Type a message…"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendGroupMessage();}"/>
+          <button class="btn btn-primary" onclick="sendGroupMessage()">Send</button>
+        </div>
+      </div>
+    </div>`;
+
+  await fetchGroupMessages();
+  // Poll every 3 seconds (same pattern as existing 1-to-1 chat)
+  chatPollTimer = setInterval(fetchGroupMessages, 3000);
+}
+
+function openGroupChat(matchId) {
+  activeChatMatchId = matchId;
+  switchTab('groupChat');
+}
+
+async function fetchGroupMessages() {
+  if (!activeChatMatchId) return;
+  const res = await apiRequest(`/api/group-chat/${activeChatMatchId}`);
+  if (!res.success) return;
+
+  const box = document.getElementById('gchatBox');
+  if (!box) { clearInterval(chatPollTimer); chatPollTimer = null; return; }
+
+  const wasAtBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+
+  box.innerHTML = (res.messages || []).map(m => `
+    <div class="gchat-msg ${m.isMine ? 'mine' : 'theirs'}">
+      <div class="gchat-bubble">${escapeHtml(m.message)}</div>
+      <div class="gchat-meta">${m.isMine ? 'You' : m.sender_name} · ${formatTime(m.timestamp)}</div>
+    </div>`).join('') || `<div style="text-align:center;color:var(--text-muted);font-size:.83rem;padding:2rem 0">No messages yet. Say hi!</div>`;
+
+  if (wasAtBottom) box.scrollTop = box.scrollHeight;
+}
+
+async function sendGroupMessage() {
+  const input = document.getElementById('gchatInput');
+  const message = input?.value.trim();
+  if (!message || !activeChatMatchId) return;
+
+  input.value = '';
+  const res = await apiRequest('/api/group-chat/send', {
+    method: 'POST',
+    body: JSON.stringify({ match_id: activeChatMatchId, message })
+  });
+  if (res.success) fetchGroupMessages();
+  else showToast(res.message, 'error');
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+</script>
+</body>
+</html>
