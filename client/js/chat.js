@@ -30,6 +30,18 @@ async function initChatPage() {
       sendMessage();
     });
   }
+  const input = document.getElementById("chatInput");
+
+  if (input) {
+    input.addEventListener("keydown", function (e) {
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
+
+    });
+  }
 
   // Mobile sidebar toggle
   const sidebarToggle = document.getElementById('sidebarToggle');
@@ -143,7 +155,6 @@ async function loadMessages(partnerId, fullLoad = false) {
 
   container.scrollTop = container.scrollHeight;
 
-  container.scrollTop = container.scrollHeight;
 }
 
 // ─── SEND MESSAGE ─────────────────────────────────────────────────
