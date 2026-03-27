@@ -17,8 +17,9 @@ async function initChatPage() {
   // Check if partner preselected via URL
   const params = new URLSearchParams(window.location.search);
   const partnerId = params.get('partner');
+
   if (partnerId) {
-    openConversation(parseInt(partnerId));
+    openConversation(partnerId);
   }
 
   // Send message
